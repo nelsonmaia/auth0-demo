@@ -1,0 +1,47 @@
+{
+  "name": "nordhem-store",
+  "version": "1.0.0",
+  "description": "Scandinavian furniture store demo built with Effect, ready for Auth0",
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "tsx watch src/server/main.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "build:vercel": "vite build && node scripts/build-vercel.mjs",
+    "start": "NODE_ENV=production tsx src/server/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nelsonmaia/auth0-demo.git"
+  },
+  "homepage": "https://github.com/nelsonmaia/auth0-demo#readme",
+  "dependencies": {
+    "@effect/atom-react": "^4.1.5",
+    "@effect/platform-browser": "^4.1.5",
+    "@effect/platform-node": "^4.1.5",
+    "effect": "^4.1.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.2",
+    "tsx": "^4.23.15"
+  },
+  "devDependencies": {
+    "@effect/vitest": "^4.1.5",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^10.0.7",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  }
+}
