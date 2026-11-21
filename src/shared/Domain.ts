@@ -10,94 +10,92 @@ export type ProductId = typeof ProductId.Type
 export const OrderId = Schema.String.pipe(Schema.brand("OrderId"))
 export type OrderId = typeof OrderId.Type
 
-export const CategoryId = Schema.Literals([
-  "sofas",
-  "chairs",
-  "tables",
-  "beds",
-  "storage",
-  "lighting",
-  "decor",
-  "textiles",
-  "kitchen",
-  "outdoor"
-])
+export const CategoryId = Schema.Literals(["shoes", "clothing", "accessories"])
 export type CategoryId = typeof CategoryId.Type
 
-export const RoomId = Schema.Literals(["living-room", "bedroom", "dining", "workspace", "outdoor"])
-export type RoomId = typeof RoomId.Type
+export const Gender = Schema.Literals(["men", "women", "kids"])
+export type Gender = typeof Gender.Type
 
-/** The illustration used to draw a product (products ship as vector art, not photos). */
+export const SportId = Schema.Literals(["running", "training", "lifestyle", "basketball", "trail"])
+export type SportId = typeof SportId.Type
+
+export const ColorFamily = Schema.Literals([
+  "black",
+  "white",
+  "grey",
+  "blue",
+  "green",
+  "red",
+  "orange",
+  "pink",
+  "purple",
+  "yellow",
+  "brown"
+])
+export type ColorFamily = typeof ColorFamily.Type
+
+/** The vector illustration used to draw a product (no photos needed). */
 export const ArtKind = Schema.Literals([
-  "sofa",
-  "armchair",
-  "dining-chair",
-  "dining-table",
-  "coffee-table",
-  "desk",
-  "bed",
-  "bookcase",
-  "dresser",
-  "wardrobe",
-  "floor-lamp",
-  "table-lamp",
-  "pendant-lamp",
-  "rug",
-  "plant",
-  "mirror",
-  "cushion",
-  "throw",
-  "mugs",
-  "vase",
-  "basket",
-  "lounger"
+  "runner",
+  "racer",
+  "trail",
+  "court-low",
+  "court-high",
+  "trainer",
+  "slide",
+  "tee",
+  "hoodie",
+  "jacket",
+  "shorts",
+  "leggings",
+  "socks",
+  "cap",
+  "bag"
 ])
 export type ArtKind = typeof ArtKind.Type
 
 /** Money is always an integer amount of cents. */
 export const Cents = Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0)))
 
-export const Quantity = Schema.Int.pipe(Schema.check(Schema.isBetween({ minimum: 1, maximum: 99 })))
+export const Quantity = Schema.Int.pipe(Schema.check(Schema.isBetween({ minimum: 1, maximum: 10 })))
 
 // ---------------------------------------------------------------------------
 // Catalog
 // ---------------------------------------------------------------------------
 
-export class Category extends Schema.Class<Category>("Category")({
-  id: CategoryId,
-  name: Schema.String,
-  tagline: Schema.String,
-  art: ArtKind,
-  tint: Schema.String
-}) {}
-
-export class Room extends Schema.Class<Room>("Room")({
-  id: RoomId,
+export class Sport extends Schema.Class<Sport>("Sport")({
+  id: SportId,
   name: Schema.String,
   tagline: Schema.String
 }) {}
 
+/** A colourway, e.g. "Black/White-Volt". */
 export class ColorOption extends Schema.Class<ColorOption>("ColorOption")({
   id: Schema.String,
   name: Schema.String,
-  hex: Schema.String
+  family: ColorFamily,
+  primary: Schema.String,
+  secondary: Schema.String,
+  tertiary: Schema.String
 }) {}
 
-export const Badge = Schema.Literals(["new", "lower-price", "top-seller", "limited"])
+export const Badge = Schema.Literals(["just-in", "bestseller", "limited", "sustainable"])
 export type Badge = typeof Badge.Type
 
 export class Product extends Schema.Class<Product>("Product")({
   id: ProductId,
   name: Schema.String,
-  type: Schema.String,
+  subtitle: Schema.String,
   description: Schema.String,
   details: Schema.Array(Schema.String),
-  dimensions: Schema.String,
+  styleCode: Schema.String,
   category: CategoryId,
-  rooms: Schema.Array(RoomId),
+  genders: Schema.Array(Gender),
+  sport: SportId,
   art: ArtKind,
-  accent: Schema.String,
   colors: Schema.NonEmptyArray(ColorOption),
+  sizes: Schema.NonEmptyArray(Schema.String),
+  unavailableSizes: Schema.Array(Schema.String),
   price: Cents,
   previousPrice: Schema.optionalKey(Cents),
   rating: Schema.Number,
@@ -108,17 +106,18 @@ export class Product extends Schema.Class<Product>("Product")({
   addedAt: Schema.String
 }) {}
 
-export const ProductSort = Schema.Literals(["popular", "price-asc", "price-desc", "newest", "rating"])
+export const ProductSort = Schema.Literals(["featured", "newest", "price-desc", "price-asc"])
 export type ProductSort = typeof ProductSort.Type
 
 // ---------------------------------------------------------------------------
-// Cart & checkout
+// Bag & checkout
 // ---------------------------------------------------------------------------
 
-/** A line in the shopper's bag. The bag itself lives on the client. */
+/** A line in the shopper's bag. The bag itself lives in the browser. */
 export class CartLine extends Schema.Class<CartLine>("CartLine")({
   productId: ProductId,
   colorId: Schema.String,
+  size: Schema.String,
   quantity: Quantity
 }) {}
 
@@ -133,6 +132,7 @@ export class QuoteRequest extends Schema.Class<QuoteRequest>("QuoteRequest")({
 export class QuoteLine extends Schema.Class<QuoteLine>("QuoteLine")({
   product: Product,
   color: ColorOption,
+  size: Schema.String,
   quantity: Schema.Int,
   unitPrice: Cents,
   lineTotal: Cents,
@@ -208,6 +208,12 @@ export class OrderNotFound extends Schema.TaggedError<OrderNotFound>()(
 export class InvalidColor extends Schema.TaggedError<InvalidColor>()(
   "InvalidColor",
   { productId: Schema.String, colorId: Schema.String },
+  { httpApiStatus: 422 }
+) {}
+
+export class InvalidSize extends Schema.TaggedError<InvalidSize>()(
+  "InvalidSize",
+  { productId: Schema.String, name: Schema.String, size: Schema.String },
   { httpApiStatus: 422 }
 ) {}
 

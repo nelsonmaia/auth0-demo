@@ -1,9 +1,10 @@
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
 import {
-  Category,
   CategoryId,
+  Gender,
   InvalidColor,
+  InvalidSize,
   Order,
   OrderId,
   OrderNotFound,
@@ -15,8 +16,8 @@ import {
   ProductSort,
   Quote,
   QuoteRequest,
-  Room,
-  RoomId
+  Sport,
+  SportId
 } from "./Domain.ts"
 
 // The API definition is shared by the server (which implements it) and the
@@ -31,16 +32,14 @@ export class SystemApi extends HttpApiGroup.make("system", { topLevel: true }).a
 
 export class CatalogApi extends HttpApiGroup.make("catalog")
   .add(
-    HttpApiEndpoint.get("categories", "/categories", {
-      success: Schema.Array(Category)
-    }),
-    HttpApiEndpoint.get("rooms", "/rooms", {
-      success: Schema.Array(Room)
+    HttpApiEndpoint.get("sports", "/sports", {
+      success: Schema.Array(Sport)
     }),
     HttpApiEndpoint.get("products", "/products", {
       query: {
         category: Schema.optional(CategoryId),
-        room: Schema.optional(RoomId),
+        gender: Schema.optional(Gender),
+        sport: Schema.optional(SportId),
         q: Schema.optional(Schema.String),
         sort: Schema.optional(ProductSort)
       },
@@ -52,7 +51,7 @@ export class CatalogApi extends HttpApiGroup.make("catalog")
       error: ProductNotFound
     })
   )
-  .annotateMerge(OpenApi.annotations({ title: "Catalog", description: "Browse products, categories and rooms" }))
+  .annotateMerge(OpenApi.annotations({ title: "Catalog", description: "Browse shoes, clothing and accessories" }))
 {}
 
 export class CheckoutApi extends HttpApiGroup.make("checkout")
@@ -60,12 +59,12 @@ export class CheckoutApi extends HttpApiGroup.make("checkout")
     HttpApiEndpoint.post("quote", "/cart/quote", {
       payload: QuoteRequest,
       success: Quote,
-      error: [ProductNotFound, InvalidColor]
+      error: [ProductNotFound, InvalidColor, InvalidSize]
     }),
     HttpApiEndpoint.post("placeOrder", "/orders", {
       payload: PlaceOrderRequest,
       success: Order,
-      error: [ProductNotFound, InvalidColor, OutOfStock]
+      error: [ProductNotFound, InvalidColor, InvalidSize, OutOfStock]
     }),
     HttpApiEndpoint.get("order", "/orders/:id", {
       params: { id: OrderId },
@@ -81,5 +80,5 @@ export class StoreApi extends HttpApi.make("store-api")
   .add(CatalogApi)
   .add(CheckoutApi)
   .prefix("/api")
-  .annotateMerge(OpenApi.annotations({ title: "Nordhem Store API" }))
+  .annotateMerge(OpenApi.annotations({ title: "KINETIK Store API" }))
 {}

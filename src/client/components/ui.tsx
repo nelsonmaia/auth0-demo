@@ -1,13 +1,13 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { Cause } from "effect"
 import { AsyncResult } from "effect/reactivity"
-import type { ReactNode } from "react"
+import { useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router"
-import type { Badge as BadgeType, Product } from "../../shared/Domain.ts"
+import type { Badge, Product } from "../../shared/Domain.ts"
 import { ProductArt } from "../art/ProductArt.tsx"
-import { splitPrice } from "../format.ts"
-import { Cart, cartAtom, favouritesAtom, toastAtom } from "../state.ts"
-import { BagIcon, HeartIcon, MinusIcon, PlusIcon, StarIcon } from "./Icons.tsx"
+import { formatMoney } from "../format.ts"
+import { Bag, cartAtom, favouritesAtom, toastAtom } from "../state.ts"
+import { ChevronLeft, ChevronRight, HeartIcon } from "./Icons.tsx"
 
 // ---------------------------------------------------------------------------
 // Async results
@@ -51,41 +51,36 @@ export const ErrorState = ({ message, action }: { message: string; action?: Reac
 )
 
 // ---------------------------------------------------------------------------
-// Price, rating, badges
+// Price & labels
 // ---------------------------------------------------------------------------
 
-export function Price({ cents, size = "md" }: { cents: number; size?: "sm" | "md" | "lg" }) {
-  const { whole, cents: rest } = splitPrice(cents)
+export function Price({ product, className = "" }: { product: Pick<Product, "price" | "previousPrice">; className?: string }) {
+  const { price, previousPrice } = product
+  if (previousPrice === undefined || previousPrice <= price) {
+    return <div className={`price ${className}`}><span className="price-now">{formatMoney(price)}</span></div>
+  }
+  const off = Math.round((1 - price / previousPrice) * 100)
   return (
-    <span className={`price price-${size}`} aria-label={`$${whole}${rest ? `.${rest}` : ""}`}>
-      <sup>$</sup>
-      <span className="price-whole">{whole}</span>
-      {rest ? <sup>.{rest}</sup> : null}
-    </span>
+    <div className={`price ${className}`}>
+      <span className="price-now is-sale">{formatMoney(price)}</span>
+      <s className="price-was">{formatMoney(previousPrice)}</s>
+      <span className="price-off">{off}% off</span>
+    </div>
   )
 }
 
-export function Rating({ value, count }: { value: number; count: number }) {
-  return (
-    <span className="rating" aria-label={`Rated ${value} out of 5 from ${count} reviews`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <StarIcon key={i} size={14} fill={value >= i - 0.25 ? "currentColor" : "#D5D0C8"} />
-      ))}
-      <span className="rating-count">({count.toLocaleString("en-US")})</span>
-    </span>
-  )
+const badgeLabels: Record<Badge, string> = {
+  "just-in": "Just In",
+  bestseller: "Bestseller",
+  sustainable: "Sustainable Materials",
+  limited: "Limited Edition"
 }
 
-const badgeLabels: Record<BadgeType, string> = {
-  new: "New",
-  "lower-price": "Lower price",
-  "top-seller": "Top seller",
-  limited: "Limited edition"
-}
+export const productLabel = (product: Product): string | undefined =>
+  product.stock <= 0 ? "Sold Out" : product.badge ? badgeLabels[product.badge] : product.previousPrice ? "Sale" : undefined
 
-export const BadgeTag = ({ badge }: { badge: BadgeType }) => (
-  <span className={`badge badge-${badge}`}>{badgeLabels[badge]}</span>
-)
+export const colourCount = (product: Product) =>
+  `${product.colors.length} Colour${product.colors.length === 1 ? "" : "s"}`
 
 // ---------------------------------------------------------------------------
 // Bag & favourites
@@ -94,144 +89,138 @@ export const BadgeTag = ({ badge }: { badge: BadgeType }) => (
 export function useAddToBag() {
   const setCart = useAtomSet(cartAtom)
   const setToast = useAtomSet(toastAtom)
-  return (product: Product, colorId: string, quantity = 1) => {
-    setCart((lines) => Cart.add(lines, product.id, colorId, quantity))
-    setToast({ id: Date.now(), product, colorId, quantity })
+  return (product: Product, colorId: string, size: string) => {
+    setCart((lines) => Bag.add(lines, { productId: product.id, colorId, size }))
+    setToast({ id: Date.now(), product, colorId, size })
   }
 }
 
-export function useFavourite(product: Product) {
+export function useFavourite(product: Product, colorId: string) {
   const favourites = useAtomValue(favouritesAtom)
   const setFavourites = useAtomSet(favouritesAtom)
-  const isFavourite = favourites.includes(product.id)
+  const isFavourite = favourites.some((f) => f.productId === product.id)
   const toggle = () =>
-    setFavourites((ids) => (ids.includes(product.id) ? ids.filter((id) => id !== product.id) : [...ids, product.id]))
+    setFavourites((list) =>
+      list.some((f) => f.productId === product.id)
+        ? list.filter((f) => f.productId !== product.id)
+        : [...list, { productId: product.id, colorId }]
+    )
   return [isFavourite, toggle] as const
-}
-
-export function FavouriteButton({ product, className = "" }: { product: Product; className?: string }) {
-  const [isFavourite, toggle] = useFavourite(product)
-  return (
-    <button
-      type="button"
-      className={`icon-button favourite ${isFavourite ? "is-active" : ""} ${className}`}
-      aria-pressed={isFavourite}
-      aria-label={isFavourite ? `Remove ${product.name} from favourites` : `Save ${product.name} to favourites`}
-      onClick={(event) => {
-        event.preventDefault()
-        event.stopPropagation()
-        toggle()
-      }}
-    >
-      <HeartIcon filled={isFavourite} size={22} />
-    </button>
-  )
-}
-
-export function QuantityStepper({
-  value,
-  onChange,
-  max = 99,
-  label = "Quantity"
-}: {
-  value: number
-  onChange: (value: number) => void
-  max?: number
-  label?: string
-}) {
-  return (
-    <div className="stepper" role="group" aria-label={label}>
-      <button type="button" aria-label="Decrease quantity" onClick={() => onChange(value - 1)} disabled={value <= 0}>
-        <MinusIcon size={18} />
-      </button>
-      <output aria-live="polite">{value}</output>
-      <button type="button" aria-label="Increase quantity" onClick={() => onChange(value + 1)} disabled={value >= max}>
-        <PlusIcon size={18} />
-      </button>
-    </div>
-  )
 }
 
 // ---------------------------------------------------------------------------
 // Product card
 // ---------------------------------------------------------------------------
 
-export function ProductCard({ product, tint }: { product: Product; tint?: string }) {
-  const addToBag = useAddToBag()
-  const [first] = product.colors
-  const outOfStock = product.stock <= 0
+export function ProductCard({ product, colorId: initialColorId }: { product: Product; colorId?: string }) {
+  const [colorId, setColorId] = useState(initialColorId ?? product.colors[0].id)
+  const color = product.colors.find((c) => c.id === colorId) ?? product.colors[0]
+  const href = `/product/${product.id}${color.id === product.colors[0].id ? "" : `?color=${color.id}`}`
+  const label = productLabel(product)
+
   return (
-    <article className="product-card">
-      <Link to={`/product/${product.id}`} className="product-card-link">
-        <div className="product-card-media">
-          <ProductArt
-            kind={product.art}
-            color={first.hex}
-            accent={product.accent}
-            tint={tint ?? "#F3F0EB"}
-            label={`${product.name} ${product.type}`}
-          />
-          {product.badge ? <BadgeTag badge={product.badge} /> : null}
-        </div>
-        <div className="product-card-body">
-          <h3 className="product-name">{product.name}</h3>
-          <p className="product-type">{product.type}</p>
-          <div className="product-card-price">
-            <Price cents={product.price} />
-            {product.previousPrice ? (
-              <span className="previous-price">
-                Regular price <s>${(product.previousPrice / 100).toFixed(2)}</s>
-              </span>
-            ) : null}
-          </div>
-          <Rating value={product.rating} count={product.reviewCount} />
-          {product.colors.length > 1 ? (
-            <div className="swatches-mini" aria-label={`${product.colors.length} colours`}>
-              {product.colors.map((color) => (
-                <span key={color.id} style={{ background: color.hex }} title={color.name} />
-              ))}
-            </div>
-          ) : null}
-        </div>
+    <article className="card">
+      <Link to={href} className="card-media" aria-label={`${product.name} ${product.subtitle}`}>
+        <ProductArt kind={product.art} paint={color} label={`${product.name} in ${color.name}`} />
       </Link>
-      <FavouriteButton product={product} className="product-card-fav" />
-      <button
-        type="button"
-        className="add-round"
-        disabled={outOfStock}
-        aria-label={outOfStock ? `${product.name} is out of stock` : `Add ${product.name} to bag`}
-        onClick={() => addToBag(product, first.id)}
-      >
-        <BagIcon size={20} />
-        <PlusIcon size={12} className="add-round-plus" strokeWidth={3} />
-      </button>
+      <div className="card-body">
+        {product.colors.length > 1 ? (
+          <div className="card-swatches" aria-label="Colours">
+            {product.colors.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                className={option.id === color.id ? "is-active" : undefined}
+                onMouseEnter={() => setColorId(option.id)}
+                onFocus={() => setColorId(option.id)}
+                onClick={() => setColorId(option.id)}
+                aria-label={option.name}
+              >
+                <ProductArt kind={product.art} paint={option} />
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <Link to={href} className="card-info">
+          {label ? <span className={`card-label ${label === "Sold Out" ? "is-muted" : ""}`}>{label}</span> : null}
+          <span className="card-name">{product.name}</span>
+          <span className="card-sub">{product.subtitle}</span>
+          <span className="card-sub card-colours">{colourCount(product)}</span>
+        </Link>
+        <Price product={product} />
+      </div>
     </article>
   )
 }
 
 export function ProductGrid({ products }: { products: ReadonlyArray<Product> }) {
   return (
-    <div className="product-grid">
+    <div className="grid">
       {products.map((product) => <ProductCard key={product.id} product={product} />)}
     </div>
   )
 }
 
-export function ProductRail({ products }: { products: ReadonlyArray<Product> }) {
+// ---------------------------------------------------------------------------
+// Carousel
+// ---------------------------------------------------------------------------
+
+export function Carousel({
+  title,
+  link,
+  linkLabel = "Shop",
+  children,
+  className = ""
+}: {
+  title: string
+  link?: string
+  linkLabel?: string
+  children: ReactNode
+  className?: string
+}) {
+  const track = useRef<HTMLDivElement>(null)
+  const scroll = (direction: 1 | -1) => {
+    const el = track.current
+    if (el) el.scrollBy({ left: direction * el.clientWidth * 0.9, behavior: "smooth" })
+  }
   return (
-    <div className="rail" role="list">
-      {products.map((product) => (
-        <div className="rail-item" role="listitem" key={product.id}>
-          <ProductCard product={product} />
+    <section className={`carousel ${className}`}>
+      <div className="carousel-head container">
+        <h2>{title}</h2>
+        <div className="carousel-controls">
+          {link ? <Link to={link} className="text-link">{linkLabel}</Link> : null}
+          <button type="button" className="round-button" aria-label={`Previous ${title}`} onClick={() => scroll(-1)}>
+            <ChevronLeft size={20} />
+          </button>
+          <button type="button" className="round-button" aria-label={`Next ${title}`} onClick={() => scroll(1)}>
+            <ChevronRight size={20} />
+          </button>
         </div>
-      ))}
-    </div>
+      </div>
+      <div className="carousel-track" ref={track}>
+        {children}
+      </div>
+    </section>
   )
 }
 
-export const SectionHeader = ({ title, link, linkLabel = "See all" }: { title: string; link?: string; linkLabel?: string }) => (
-  <div className="section-header">
-    <h2>{title}</h2>
-    {link ? <Link to={link} className="text-link">{linkLabel}</Link> : null}
-  </div>
-)
+export function ProductCarousel({ title, link, products }: { title: string; link?: string; products: ReadonlyArray<Product> }) {
+  return (
+    <Carousel title={title} link={link}>
+      {products.map((product) => (
+        <div className="carousel-item" key={product.id}>
+          <ProductCard product={product} />
+        </div>
+      ))}
+    </Carousel>
+  )
+}
+
+export function FavouriteButton({ product, colorId }: { product: Product; colorId: string }) {
+  const [isFavourite, toggle] = useFavourite(product, colorId)
+  return (
+    <button type="button" className="button button-outline button-lg button-block" aria-pressed={isFavourite} onClick={toggle}>
+      {isFavourite ? "Favourited" : "Favourite"} <HeartIcon size={22} filled={isFavourite} />
+    </button>
+  )
+}

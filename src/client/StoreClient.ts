@@ -9,7 +9,7 @@ import { StoreApi } from "../shared/Api.ts"
  * Rename an endpoint or change a schema on the server and this client stops
  * compiling until the UI is updated.
  */
-export class StoreClient extends AtomHttpApi.Service<StoreClient>()("nordhem/StoreClient", {
+export class StoreClient extends AtomHttpApi.Service<StoreClient>()("kinetik/StoreClient", {
   api: StoreApi,
   httpClient: FetchHttpClient.layer,
   baseUrl: typeof window === "undefined" ? "http://localhost:3001" : window.location.origin

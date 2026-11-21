@@ -1,11 +1,12 @@
 import { Context, Effect, Layer, SynchronizedRef } from "effect"
-import type { CategoryId, ProductSort, RoomId } from "../shared/Domain.ts"
-import { Category, OutOfStock, Product, ProductId, ProductNotFound, Room } from "../shared/Domain.ts"
+import type { CategoryId, Gender, ProductSort, SportId } from "../shared/Domain.ts"
+import { OutOfStock, Product, ProductId, ProductNotFound, Sport } from "../shared/Domain.ts"
 import * as Data from "./CatalogData.ts"
 
 export interface ProductFilter {
   readonly category?: CategoryId | undefined
-  readonly room?: RoomId | undefined
+  readonly gender?: Gender | undefined
+  readonly sport?: SportId | undefined
   readonly q?: string | undefined
   readonly sort?: ProductSort | undefined
 }
@@ -23,12 +24,11 @@ export interface StockReservation {
  * HTTP handler.
  */
 export class Catalog extends Context.Service<Catalog, {
-  readonly categories: Effect.Effect<ReadonlyArray<Category>>
-  readonly rooms: Effect.Effect<ReadonlyArray<Room>>
+  readonly sports: Effect.Effect<ReadonlyArray<Sport>>
   list(filter: ProductFilter): Effect.Effect<ReadonlyArray<Product>>
   get(id: string): Effect.Effect<Product, ProductNotFound>
   reserve(items: ReadonlyArray<StockReservation>): Effect.Effect<void, OutOfStock>
-}>()("nordhem/server/Catalog") {
+}>()("kinetik/server/Catalog") {
   static readonly layer = Layer.effect(
     Catalog,
     Effect.gen(function*() {
@@ -45,18 +45,24 @@ export class Catalog extends Context.Service<Catalog, {
 
       const matches = (product: Product, query: string) => {
         const haystack = normalize(
-          [product.name, product.type, product.description, product.category, ...product.colors.map((c) => c.name)]
+          [
+            product.name,
+            product.subtitle,
+            product.category,
+            product.sport,
+            ...product.genders,
+            ...product.colors.map((c) => `${c.name} ${c.family}`)
+          ]
             .join(" ")
         )
         return normalize(query).split(/\s+/).every((term) => haystack.includes(term))
       }
 
       const sorters: Record<ProductSort, (a: Product, b: Product) => number> = {
-        popular: (a, b) => b.popularity - a.popularity,
+        featured: (a, b) => b.popularity - a.popularity,
         "price-asc": (a, b) => a.price - b.price,
         "price-desc": (a, b) => b.price - a.price,
-        newest: (a, b) => b.addedAt.localeCompare(a.addedAt),
-        rating: (a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount
+        newest: (a, b) => b.addedAt.localeCompare(a.addedAt) || b.popularity - a.popularity
       }
 
       const list = Effect.fn("Catalog.list")(function*(filter: ProductFilter) {
@@ -64,9 +70,10 @@ export class Catalog extends Context.Service<Catalog, {
         const levels = yield* SynchronizedRef.get(stock)
         return Data.products
           .filter((product) => filter.category === undefined || product.category === filter.category)
-          .filter((product) => filter.room === undefined || product.rooms.includes(filter.room))
+          .filter((product) => filter.gender === undefined || product.genders.includes(filter.gender))
+          .filter((product) => filter.sport === undefined || product.sport === filter.sport)
           .filter((product) => filter.q === undefined || filter.q.trim() === "" || matches(product, filter.q))
-          .toSorted(sorters[filter.sort ?? "popular"])
+          .toSorted(sorters[filter.sort ?? "featured"])
           .map((product) => withStock(product, levels))
       })
 
@@ -101,8 +108,7 @@ export class Catalog extends Context.Service<Catalog, {
       )
 
       return Catalog.of({
-        categories: Effect.succeed(Data.categories),
-        rooms: Effect.succeed(Data.rooms),
+        sports: Effect.succeed(Data.sports),
         list,
         get,
         reserve

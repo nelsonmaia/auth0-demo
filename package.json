@@ -1,7 +1,7 @@
 {
-  "name": "nordhem-store",
+  "name": "kinetik-store",
   "version": "1.0.0",
-  "description": "Scandinavian furniture store demo built with Effect, ready for Auth0",
+  "description": "Athletic shoes and apparel store demo built with Effect, ready for Auth0",
   "scripts": {
     "dev": "concurrently -k -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "tsx watch src/server/main.ts",

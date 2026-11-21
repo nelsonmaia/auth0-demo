@@ -2,7 +2,7 @@
 # Runs the same Effect server with `npm start`, serving the UI and the API.
 services:
   - type: web
-    name: nordhem-store
+    name: kinetik-store
     runtime: node
     plan: free
     buildCommand: npm install && npm run build

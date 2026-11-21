@@ -1,7 +1,7 @@
 import type { DeliveryMethod } from "./Domain.ts"
 
 /** Standard delivery is free from this subtotal (in cents). */
-export const FREE_DELIVERY_THRESHOLD = 50_000
+export const FREE_DELIVERY_THRESHOLD = 5_000
 
 export const deliveryOptions: ReadonlyArray<{
   readonly id: DeliveryMethod
@@ -9,9 +9,9 @@ export const deliveryOptions: ReadonlyArray<{
   readonly description: string
   readonly days: number
 }> = [
-  { id: "standard", label: "Home delivery", description: "Delivered to your door in 3–5 working days", days: 5 },
-  { id: "express", label: "Express delivery", description: "Next working day, 8am–6pm", days: 1 },
-  { id: "pickup", label: "Click & collect", description: "Pick up at a collection point in 2 days", days: 2 }
+  { id: "standard", label: "Standard Delivery", description: "Arrives in 4–6 business days", days: 6 },
+  { id: "express", label: "Express Delivery", description: "Arrives in 1–2 business days", days: 2 },
+  { id: "pickup", label: "Pick Up", description: "Free pick-up at a partner store in 2–3 days", days: 3 }
 ]
 
 export const deliveryFee = (method: DeliveryMethod, subtotal: number): number => {
@@ -19,11 +19,11 @@ export const deliveryFee = (method: DeliveryMethod, subtotal: number): number =>
     case "pickup":
       return 0
     case "express":
-      return 4_900
+      return 2_000
     case "standard":
-      return subtotal === 0 || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : 2_900
+      return subtotal === 0 || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : 800
   }
 }
 
 export const deliveryDays = (method: DeliveryMethod): number =>
-  deliveryOptions.find((option) => option.id === method)?.days ?? 5
+  deliveryOptions.find((option) => option.id === method)?.days ?? 6

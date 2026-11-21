@@ -1,26 +1,27 @@
-# Nordhem — a Scandinavian furniture store built with Effect
+# KINETIK — an athletic store built with Effect
 
-A demo shop in the spirit of the big flat-pack furniture stores: browse
-products and rooms, search, pick colours, save favourites, fill a shopping bag
-and check out. It is built end to end with [Effect](https://effect.website)
-and is ready for Auth0 to be added next.
+A demo shop in the style of the big sportswear stores: shoes, clothing and
+accessories for running, training, basketball, trail and lifestyle, with
+colourways, sizes, filters, a bag and checkout. It is built end to end with
+[Effect](https://effect.website) and is ready for Auth0 to be added next.
 
-> Nordhem is a fictional brand. Product names are invented and all images are
-> vector illustrations drawn in code, so there are no photos or third-party
-> assets to license.
+> KINETIK is a fictional brand. Product names are invented and every product
+> image is a vector illustration drawn in code, so there are no photos,
+> logos or third-party assets to license.
 
 ## What's inside
 
 | Area | What it does |
 | --- | --- |
-| **Home** | Hero, categories, lower-price offers, shop-by-room, top sellers, new in |
-| **Listing** | Category, room, search, "new in" and "lower price" views with sorting |
-| **Product page** | Colour variants, quantity, stock level, delivery info, similar products |
-| **Bag** | Server-priced quote, quantity changes, delivery choice, free-delivery progress |
-| **Checkout** | Contact + address form validated with the same Schemas the server uses |
-| **Order confirmation** | Order number, ETA and timeline |
+| **Header** | Utility bar, mega menus (New & Featured, Men, Women, Kids, Sale), live search |
+| **Home** | Hero, featured tiles, Just In, Shop by Sport, Trending Now, The Essentials, member band |
+| **Listing** | Gender/category/sport views, filter sidebar (sale, price, colour, sport), sort, mobile filter sheet |
+| **Product page** | Gallery, colourways, size grid with sold-out sizes, favourites, delivery info, accordions |
+| **Bag** | Server-priced bag, change size/quantity, free-delivery progress, Guest / Member Checkout |
+| **Checkout** | Ship or Pick Up, shipping speed, address and contact validated with the server's Schemas |
+| **Order confirmation** | Order number, delivery date and timeline |
 | **Favourites** | Saved in `localStorage`, validated with Schema on read |
-| **Account** | Placeholder for Auth0 sign-in |
+| **Account** | "Join Us / Sign In" placeholder for Auth0 |
 | **API docs** | Interactive OpenAPI docs at `/api/docs` |
 
 The layout is mobile-first: it works well on a phone and scales up to desktop.
@@ -40,14 +41,15 @@ test/       API tests running against the real handlers in memory
   implements it with `HttpApiBuilder`, and the browser derives a fully typed
   client from it (`AtomHttpApi`). Renaming a field breaks the build on both
   sides.
-- **Typed errors.** `ProductNotFound`, `InvalidColor`, `OutOfStock` and
-  `OrderNotFound` are `Schema.TaggedError`s with HTTP status codes. The client
+- **Typed errors.** `ProductNotFound`, `InvalidColor`, `InvalidSize`,
+  `OutOfStock` and `OrderNotFound` are `Schema.TaggedError`s with HTTP status
+  codes. The client
   receives them as typed values, not opaque 4xx responses.
 - **Services and Layers.** `Catalog` and `Orders` are `Context.Service`s
   provided via `Layer`s. Stock lives in a `SynchronizedRef`, so concurrent
   checkouts can't oversell. Swapping in a database means writing a new
   layer; the handlers stay the same.
-- **Server-side pricing.** The bag only stores product IDs, colours and
+- **Server-side pricing.** The bag only stores product IDs, colours, sizes and
   quantities. Prices, savings and delivery fees always come from the server.
 - **Effect Atom on the client.** The bag and favourites use `Atom.kvs` with
   `localStorage`. The quote atom re-runs whenever the bag or the delivery
@@ -115,8 +117,9 @@ layer (for example with `effect/sql`).
 
 The seams are already there:
 
-- `/account` and the "Hej! Log in" header link are placeholders for Auth0
-  Universal Login (`@auth0/auth0-react` in the browser).
+- `/account`, the "Join Us / Sign In" links and the **Member Checkout** button
+  are placeholders for Auth0 Universal Login (`@auth0/auth0-react` in the
+  browser).
 - `src/shared/Api.ts` is where an `HttpApiMiddleware` with
   `HttpApiSecurity.bearer` would go. It would protect `/api/orders` and
   provide a `CurrentUser` service to the handlers.

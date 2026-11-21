@@ -9,7 +9,7 @@ const SystemHandlers = HttpApiBuilder.group(
   "system",
   Effect.fn(function*(handlers) {
     return handlers.handleAll({
-      health: () => Effect.succeed({ status: "ok" as const, service: "nordhem-store" })
+      health: () => Effect.succeed({ status: "ok" as const, service: "kinetik-store" })
     })
   })
 )
@@ -20,8 +20,7 @@ const CatalogHandlers = HttpApiBuilder.group(
   Effect.fn(function*(handlers) {
     const catalog = yield* Catalog
     return handlers.handleAll({
-      categories: () => catalog.categories,
-      rooms: () => catalog.rooms,
+      sports: () => catalog.sports,
       products: ({ query }) => catalog.list(query),
       product: ({ params }) => catalog.get(params.id)
     })

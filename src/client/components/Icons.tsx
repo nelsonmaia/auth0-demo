@@ -107,3 +107,15 @@ export const StarIcon = ({ fill = "currentColor", ...p }: IconProps & { fill?: s
     <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z" />
   </svg>
 )
+export const FilterIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+    <circle cx="16" cy="7" r="2" />
+    <circle cx="10" cy="17" r="2" />
+  </svg>
+)
+export const ShirtIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M8 4 4 7l2 4 2-1v10h8V10l2 1 2-4-4-3c-1 2-2 3-4 3S9 6 8 4Z" />
+  </svg>
+)

@@ -1,7 +1,15 @@
 import { Context, DateTime, Effect, Layer, Random, Ref } from "effect"
-import type { CartLine, DeliveryMethod, OrderId as OrderIdType, PlaceOrderRequest, QuoteRequest } from "../shared/Domain.ts"
+import type {
+  CartLine,
+  DeliveryMethod,
+  OrderId as OrderIdType,
+  PlaceOrderRequest,
+  ProductId as ProductIdType,
+  QuoteRequest
+} from "../shared/Domain.ts"
 import {
   InvalidColor,
+  InvalidSize,
   Order,
   OrderId,
   OrderNotFound,
@@ -18,26 +26,27 @@ import { Catalog } from "./Catalog.ts"
  * from the client, so a tampered request cannot change what the shopper pays.
  */
 export class Orders extends Context.Service<Orders, {
-  quote(request: QuoteRequest): Effect.Effect<Quote, ProductNotFound | InvalidColor>
-  place(request: PlaceOrderRequest): Effect.Effect<Order, ProductNotFound | InvalidColor | OutOfStock>
+  quote(request: QuoteRequest): Effect.Effect<Quote, ProductNotFound | InvalidColor | InvalidSize>
+  place(request: PlaceOrderRequest): Effect.Effect<Order, ProductNotFound | InvalidColor | InvalidSize | OutOfStock>
   get(id: OrderIdType): Effect.Effect<Order, OrderNotFound>
-}>()("nordhem/server/Orders") {
+}>()("kinetik/server/Orders") {
   static readonly layer = Layer.effect(
     Orders,
     Effect.gen(function*() {
       const catalog = yield* Catalog
       const orders = yield* Ref.make(new Map<string, Order>())
 
-      // Merge duplicate product/colour lines so quantities add up.
+      // Merge duplicate product/colour/size lines so quantities add up.
       const mergeLines = (lines: ReadonlyArray<CartLine>) => {
-        const merged = new Map<string, { productId: string; colorId: string; quantity: number }>()
+        const merged = new Map<string, { productId: string; colorId: string; size: string; quantity: number }>()
         for (const line of lines) {
-          const key = `${line.productId}:${line.colorId}`
+          const key = `${line.productId}:${line.colorId}:${line.size}`
           const existing = merged.get(key)
           merged.set(key, {
             productId: line.productId,
             colorId: line.colorId,
-            quantity: Math.min(99, (existing?.quantity ?? 0) + line.quantity)
+            size: line.size,
+            quantity: Math.min(10, (existing?.quantity ?? 0) + line.quantity)
           })
         }
         return [...merged.values()]
@@ -51,9 +60,13 @@ export class Orders extends Context.Service<Orders, {
             if (color === undefined) {
               return yield* new InvalidColor({ productId: line.productId, colorId: line.colorId })
             }
+            if (!product.sizes.includes(line.size) || product.unavailableSizes.includes(line.size)) {
+              return yield* new InvalidSize({ productId: line.productId, name: product.name, size: line.size })
+            }
             return new QuoteLine({
               product,
               color,
+              size: line.size,
               quantity: line.quantity,
               unitPrice: product.price,
               lineTotal: product.price * line.quantity,
@@ -87,12 +100,19 @@ export class Orders extends Context.Service<Orders, {
         for (let i = 0; i < 8; i++) {
           suffix += alphabet[yield* Random.nextIntBetween(0, alphabet.length - 1)]
         }
-        return OrderId.make(`NH-${suffix}`)
+        return OrderId.make(`KT-${suffix}`)
       })
 
       const place = Effect.fn("Orders.place")(function*(request: PlaceOrderRequest) {
         const priced = yield* priceBag(request.lines, request.delivery)
-        yield* catalog.reserve(priced.lines.map((line) => ({ productId: line.product.id, quantity: line.quantity })))
+        // Reserve stock per product (sizes share one stock level in this demo).
+        const perProduct = new Map<string, number>()
+        for (const line of priced.lines) {
+          perProduct.set(line.product.id, (perProduct.get(line.product.id) ?? 0) + line.quantity)
+        }
+        yield* catalog.reserve(
+          [...perProduct].map(([productId, quantity]) => ({ productId: productId as ProductIdType, quantity }))
+        )
 
         const now = yield* DateTime.now
         const eta = DateTime.add(now, { days: deliveryDays(request.delivery) })

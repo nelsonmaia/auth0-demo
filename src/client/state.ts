@@ -1,7 +1,7 @@
 import { BrowserKeyValueStore } from "@effect/platform-browser"
 import { Effect, Schema } from "effect"
 import { Atom } from "effect/reactivity"
-import type { CategoryId, DeliveryMethod, Order, Product, ProductSort, RoomId } from "../shared/Domain.ts"
+import type { CategoryId, DeliveryMethod, Gender, Order, Product, ProductSort, SportId } from "../shared/Domain.ts"
 import { CartLine, ProductId, Quantity, QuoteRequest } from "../shared/Domain.ts"
 import { StoreClient } from "./StoreClient.ts"
 
@@ -11,41 +11,55 @@ import { StoreClient } from "./StoreClient.ts"
 
 const storage = Atom.runtime(BrowserKeyValueStore.layerLocalStorage)
 
-const StoredLine = Schema.Struct({ productId: ProductId, colorId: Schema.String, quantity: Quantity })
+const StoredLine = Schema.Struct({
+  productId: ProductId,
+  colorId: Schema.String,
+  size: Schema.String,
+  quantity: Quantity
+})
 export type StoredLine = typeof StoredLine.Type
 
 /** The shopping bag. Corrupt or outdated data in storage falls back to empty. */
 export const cartAtom = Atom.kvs({
   runtime: storage,
-  key: "nordhem.cart.v1",
+  key: "kinetik.bag.v1",
   schema: Schema.Array(StoredLine),
   defaultValue: () => []
 }).pipe(Atom.keepAlive)
 
+const Favourite = Schema.Struct({ productId: ProductId, colorId: Schema.String })
+export type Favourite = typeof Favourite.Type
+
 export const favouritesAtom = Atom.kvs({
   runtime: storage,
-  key: "nordhem.favourites.v1",
-  schema: Schema.Array(ProductId),
+  key: "kinetik.favourites.v1",
+  schema: Schema.Array(Favourite),
   defaultValue: () => []
 }).pipe(Atom.keepAlive)
 
 export const cartCountAtom = Atom.make((get) => get(cartAtom).reduce((sum, line) => sum + line.quantity, 0))
 
-// Pure cart operations, used with `useAtom(cartAtom)` setters.
-export const Cart = {
-  add: (lines: ReadonlyArray<StoredLine>, productId: ProductId, colorId: string, quantity = 1) => {
-    const index = lines.findIndex((l) => l.productId === productId && l.colorId === colorId)
-    if (index === -1) return [...lines, { productId, colorId, quantity: Math.min(99, quantity) }]
-    return lines.map((l, i) => (i === index ? { ...l, quantity: Math.min(99, l.quantity + quantity) } : l))
+const same = (a: Pick<StoredLine, "productId" | "colorId" | "size">, b: Pick<StoredLine, "productId" | "colorId" | "size">) =>
+  a.productId === b.productId && a.colorId === b.colorId && a.size === b.size
+
+/** Pure bag operations, used with `useAtom(cartAtom)` setters. */
+export const Bag = {
+  add: (lines: ReadonlyArray<StoredLine>, item: Omit<StoredLine, "quantity">, quantity = 1) => {
+    const existing = lines.find((l) => same(l, item))
+    if (!existing) return [...lines, { ...item, quantity: Math.min(10, quantity) }]
+    return lines.map((l) => (same(l, item) ? { ...l, quantity: Math.min(10, l.quantity + quantity) } : l))
   },
-  setQuantity: (lines: ReadonlyArray<StoredLine>, productId: ProductId, colorId: string, quantity: number) =>
+  setQuantity: (lines: ReadonlyArray<StoredLine>, item: Omit<StoredLine, "quantity">, quantity: number) =>
     quantity <= 0
-      ? lines.filter((l) => !(l.productId === productId && l.colorId === colorId))
-      : lines.map((l) =>
-        l.productId === productId && l.colorId === colorId ? { ...l, quantity: Math.min(99, quantity) } : l
-      ),
-  remove: (lines: ReadonlyArray<StoredLine>, productId: ProductId, colorId: string) =>
-    lines.filter((l) => !(l.productId === productId && l.colorId === colorId))
+      ? lines.filter((l) => !same(l, item))
+      : lines.map((l) => (same(l, item) ? { ...l, quantity: Math.min(10, quantity) } : l)),
+  setSize: (lines: ReadonlyArray<StoredLine>, item: Omit<StoredLine, "quantity">, size: string) => {
+    const current = lines.find((l) => same(l, item))
+    if (!current) return lines
+    const rest = lines.filter((l) => !same(l, item))
+    return Bag.add(rest, { ...item, size }, current.quantity)
+  },
+  remove: (lines: ReadonlyArray<StoredLine>, item: Omit<StoredLine, "quantity">) => lines.filter((l) => !same(l, item))
 }
 
 // ---------------------------------------------------------------------------
@@ -61,7 +75,7 @@ export interface Toast {
   readonly id: number
   readonly product: Product
   readonly colorId: string
-  readonly quantity: number
+  readonly size: string
 }
 export const toastAtom = Atom.make<Toast | undefined>(undefined)
 
@@ -69,23 +83,29 @@ export const toastAtom = Atom.make<Toast | undefined>(undefined)
 // Server data
 // ---------------------------------------------------------------------------
 
-export const categoriesAtom = StoreClient.query("catalog", "categories", { timeToLive: "10 minutes" })
-export const roomsAtom = StoreClient.query("catalog", "rooms", { timeToLive: "10 minutes" })
+export const sportsAtom = StoreClient.query("catalog", "sports", { timeToLive: "10 minutes" })
 
 export interface ProductQuery {
   readonly category?: CategoryId | undefined
-  readonly room?: RoomId | undefined
+  readonly gender?: Gender | undefined
+  readonly sport?: SportId | undefined
   readonly q?: string | undefined
   readonly sort?: ProductSort | undefined
 }
 
-// Keyed by a string so identical queries always share one atom (and cache).
+// Keyed by a string so identical queries always share one atom (and its cache).
 const productsFamily = Atom.family((key: string) =>
   StoreClient.query("catalog", "products", { query: JSON.parse(key) as ProductQuery, timeToLive: "2 minutes" })
 )
 export const productsAtom = (query: ProductQuery) =>
   productsFamily(
-    JSON.stringify({ category: query.category, room: query.room, q: query.q || undefined, sort: query.sort })
+    JSON.stringify({
+      category: query.category,
+      gender: query.gender,
+      sport: query.sport,
+      q: query.q?.trim() || undefined,
+      sort: query.sort
+    })
   )
 
 const productFamily = Atom.family((id: string) =>
