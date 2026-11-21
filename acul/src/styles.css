@@ -460,3 +460,15 @@ body.kinetik {
     transition: none;
   }
 }
+
+/* Experiment: passkey first ---------------------------------------------- */
+.k-hint {
+  margin-top: 10px !important;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.k-form + .k-stack {
+  margin-top: 12px;
+}

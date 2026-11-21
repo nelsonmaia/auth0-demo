@@ -31,6 +31,15 @@ function googleConnection(conns: ReadonlyArray<Connection> | null | undefined): 
   return conns?.find((c) => c.strategy === "google-oauth2" || c.name === "google-oauth2")
 }
 
+/**
+ * Reads one Experiment Center flag parameter. Entries arrive as `{ value }`
+ * objects, so always unwrap `.value`. Returns undefined when no experiment.
+ */
+function flag(experiment: { config: Record<string, unknown> } | null | undefined, key: string): unknown {
+  const entry = experiment?.config?.[key] as { value?: unknown } | undefined
+  return entry?.value
+}
+
 function raw(data: FormData, key: string): string {
   const v = data.get(key)
   return typeof v === "string" ? v : ""
@@ -78,12 +87,43 @@ export function loginId(): HTMLElement {
   const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
   const google = googleConnection(sdk.transaction.alternateConnections)
 
+  // Experiment "KINETIK passkey first": the treatment leads with the passkey
+  // button. Only when passkeys are on; otherwise everyone sees email first.
+  const passkeyFirst = sdk.transaction.isPasskeyEnabled && flag(sdk.experiment, "passkey_first") === true
+
   const f = form(
-    [errorBanner(errors, ["username", "captcha"]), id.el, cap.el, primaryButton("Continue")],
+    [
+      errorBanner(errors, ["username", "captcha"]),
+      id.el,
+      cap.el,
+      passkeyFirst ? h("button", { type: "submit", class: "k-btn k-btn-outline" }, "Continue with Email") : primaryButton("Continue"),
+    ],
     (data) => sdk.login({ username: str(data, "username"), captcha: cap.value() }),
   )
 
   if (sdk.transaction.showPasskeyAutofill) sdk.registerPasskeyAutofill("k-username").catch(() => {})
+
+  if (passkeyFirst) {
+    const passkey = h("button", { type: "button", class: "k-btn k-btn-primary k-passkey-first" }, "Sign in with a Passkey")
+    passkey.addEventListener("click", () => {
+      passkey.classList.add("is-busy")
+      sdk.passkeyLogin().catch(() => passkey.classList.remove("is-busy"))
+    })
+    return h(
+      "div",
+      { "data-variation": "passkey-first" },
+      ...title("Sign in or join KINETIK.", "Use your passkey for the fastest sign-in, or continue with your email."),
+      h("div", { class: "k-stack" }, passkey),
+      h("p", { class: "k-hint" }, "Uses your fingerprint, face or screen lock."),
+      divider(),
+      f,
+      google ? h("div", { class: "k-stack" }, googleButton(() => sdk.federatedLogin({ connection: google.name }))) : null,
+      links(
+        sdk.transaction.isSignupEnabled ? ["New to KINETIK? Join us", sdk.screen.signupLink] : null,
+        sdk.transaction.isForgotPasswordEnabled ? ["Forgot password?", sdk.screen.resetPasswordLink] : null,
+      ),
+    )
+  }
 
   return h(
     "div",

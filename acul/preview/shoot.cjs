@@ -40,6 +40,18 @@ const cases = {
   "passkey-enrollment": base("passkey-enrollment", { screen: { links: { back: "#b" }, data: { passkey: { public_key: { challenge: "x", user: { id: "x", name: "jane", displayName: "jane" }, rp: { id: "x", name: "x" }, pubKeyCredParams: [] } } } } }),
   "reset-password-request": base("reset-password-request", { screen: { links: { back: "#b" } } }),
   "reset-password": base("reset-password", { screen: { data: { username: "jane@example.com" } } }),
+  "exp-passkey-first": (() => {
+    const c = base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } } })
+    c.transaction.connection.options.authentication_methods.passkey.enabled = true
+    c.experiment = { experiment_id: "exp_mock", variation_id: "var_mock", variation_name: "Passkey first", is_control: false, config: { passkey_first: { value: true } } }
+    return c
+  })(),
+  "exp-email-first": (() => {
+    const c = base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } } })
+    c.transaction.connection.options.authentication_methods.passkey.enabled = true
+    c.experiment = { experiment_id: "exp_mock", variation_id: "var_ctl", variation_name: "Email first", is_control: true, config: { passkey_first: { value: false } } }
+    return c
+  })(),
 }
 ;(async () => {
   const browser = await chromium.launch()
@@ -48,11 +60,12 @@ const cases = {
   const errors = []
   for (const [vp, size] of [["phone", { width: 390, height: 844 }], ["desktop", { width: 1366, height: 860 }]]) {
     for (const [name, ctx] of Object.entries(cases)) {
-      if (vp === "desktop" && !["login-id", "signup-password"].includes(name)) continue
+      if (process.argv[3] && !name.startsWith(process.argv[3])) continue
+      if (vp === "desktop" && !["login-id", "signup-password", "exp-passkey-first"].includes(name)) continue
       const page = await browser.newPage({ viewport: size })
       page.on("pageerror", (e) => errors.push(`${name}: ${e.message}`))
       page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`))
-      await page.route("**/hero-sprint.webp", (r) => r.fulfill({ path: path.join(dist, "hero-sprint.webp") }))
+      await page.route("**/hero-sprint.webp", (r) => r.fulfill({ path: path.resolve(__dirname, "../../public/photos/hero-sprint.webp") }))
       await page.route("https://acul.test/", (r) => r.fulfill({ contentType: "text/html", body:
         `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap">

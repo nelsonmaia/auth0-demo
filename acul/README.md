@@ -63,3 +63,23 @@ curl -X PATCH https://nelson.jp.auth0.com/api/v2/prompts/rendering \
 `node preview/shoot.cjs <out-dir>` renders each screen from `dist/` with mock
 context data and takes screenshots. `node preview/live.cjs <out-dir>` runs the
 real flow from the live store (stops at a wrong-password error; creates no users).
+
+## Experiments (Auth0 Experiment Center)
+
+The email screen (`login-id`) has `context_configuration: ["experiment"]`, so
+the ACUL SDK exposes `experiment` on it. `flag()` in `src/screens.ts` reads a
+flag parameter (always unwrap `.value`).
+
+| Experiment | Flag | Cohorts | Status |
+| --- | --- | --- | --- |
+| `exp_wiUXgJC3b5ayCcs2JRMbu9` KINETIK passkey first | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | 50/50 random, sticky per user and device | draft |
+| KINETIK passkey prompt timing (Exp 1) | `flg_a0_managed_passkey_enrollment` (Auth0-managed) | see HANDOVER.md | not created |
+
+Segment `seg_tZouhVqdez8ThL2MagzQg2` ("KINETIK Store app") matches the KINETIK
+client ID. Segment rules use arrays of exact values, e.g.
+`{"match":{"client_id":["<id>"]}}`. Auth0 does not allow a random split inside a
+segment, or ramp `levels` with segments; percentage splits are tenant-wide.
+While the feature is in beta, only one experiment can be active per tenant.
+
+Force a version for QA by adding `experiment_id` and `variation_id` to the
+`/authorize` request (works in draft).
