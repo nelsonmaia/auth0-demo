@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from "@effect/atom-react"
 import { Link, useNavigate } from "react-router"
-import type { Quote } from "../../shared/Domain.ts"
+import { type Quote, QuoteLine } from "../../shared/Domain.ts"
 import { deliveryOptions } from "../../shared/Pricing.ts"
 import { ProductArt } from "../art/ProductArt.tsx"
 import { HeartIcon, TrashIcon } from "../components/Icons.tsx"
@@ -63,11 +63,26 @@ export function CartPage() {
                 <h1 className="page-title desktop-only">Bag</h1>
                 <FreeDeliveryNote quote={value} />
                 <ul className={`bag-lines ${waiting ? "is-waiting" : ""}`}>
-                  {value.lines.map((line) => {
-                    const key = { productId: line.product.id, colorId: line.color.id, size: line.size }
+                  {lines.flatMap((local) => {
+                    // Rows follow the local bag (updated instantly); the server
+                    // quote supplies product data and prices. While a new quote
+                    // is in flight, fall back to the previous line for this product.
+                    const quoted =
+                      value.lines.find((q) =>
+                        q.product.id === local.productId && q.color.id === local.colorId && q.size === local.size
+                      ) ??
+                        value.lines.find((q) => q.product.id === local.productId && q.color.id === local.colorId)
+                    if (!quoted) return []
+                    const key = { productId: local.productId, colorId: local.colorId, size: local.size }
+                    const line = new QuoteLine({
+                      ...quoted,
+                      size: local.size,
+                      quantity: local.quantity,
+                      lineTotal: quoted.unitPrice * local.quantity
+                    })
                     return (
                       <BagLine
-                        key={`${line.product.id}:${line.color.id}:${line.size}`}
+                        key={`${local.productId}:${local.colorId}:${local.size}`}
                         line={line}
                         onQuantity={(quantity) => setLines((current) => Bag.setQuantity(current, key, quantity))}
                         onSize={(size) => setLines((current) => Bag.setSize(current, key, size))}
