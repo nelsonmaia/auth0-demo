@@ -5,10 +5,12 @@ import type { Order } from "../../shared/Domain.ts"
 import { OrderId } from "../../shared/Domain.ts"
 import { deliveryOptions } from "../../shared/Pricing.ts"
 import { LogoMark } from "../art/ProductArt.tsx"
+import { Photo } from "../components/Photo.tsx"
 import { CheckIcon, HeartIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, ProductCard } from "../components/ui.tsx"
 import { formatDate, formatTotal } from "../format.ts"
 import { favouritesAtom, lastOrderAtom, productsAtom } from "../state.ts"
+import { type PhotoName, photos } from "../photos.ts"
 import { StoreClient } from "../StoreClient.ts"
 import { QuoteLines } from "./Cart.tsx"
 
@@ -153,6 +155,40 @@ export function AccountPage() {
         <p className="muted small">Secure sign-in will be powered by Auth0.</p>
         {fromCheckout ? <Link to="/checkout" className="text-link">Continue as guest</Link> : null}
       </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Photo credits
+// ---------------------------------------------------------------------------
+
+export function CreditsPage() {
+  return (
+    <div className="container page credits-page">
+      <h1 className="page-title">Photo Credits</h1>
+      <p>
+        All photographs on this demo site are released under CC0 (public domain) by their creators on StockSnap and rawpixel, found
+        through Openverse. Attribution isn't required, but we're grateful, so here they are. Product images are illustrations of
+        fictional KINETIK products.
+      </p>
+      <ul className="credits">
+        {(Object.keys(photos) as Array<PhotoName>).map((name) => {
+          const photo = photos[name]
+          return (
+            <li key={name}>
+              <Photo name={name} />
+              <div>
+                <strong>{photo.title}</strong>
+                <br />
+                <span>
+                  by {photo.creator} · {photo.source} · CC0 · <a href={photo.landing} target="_blank" rel="noreferrer">source</a>
+                </span>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

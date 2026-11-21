@@ -438,7 +438,7 @@ function Footer() {
           <h4>Company</h4>
           <span>About KINETIK</span>
           <span>Sustainability</span>
-          <span>Careers</span>
+          <Link to="/credits">Photo Credits</Link>
         </div>
         <div className="footer-locale">
           <span>🌐 United States</span>

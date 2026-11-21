@@ -7,9 +7,12 @@ colourways, sizes, filters, a bag and checkout. It is built end to end with
 
 **Live demo:** <https://kinetik-store-zeta.vercel.app> (works on phones too)
 
-> KINETIK is a fictional brand. Product names are invented and every product
-> image is a vector illustration drawn in code, so there are no photos,
-> logos or third-party assets to license.
+> KINETIK is a fictional brand and product names are invented. Campaign
+> imagery (hero, featured tiles, Shop by Sport, The Essentials and the "in
+> action" slide on product pages) uses real CC0 / public-domain photos from
+> StockSnap and rawpixel, found via [Openverse](https://openverse.org) and
+> listed on `/credits`. Product images are illustrations drawn in code,
+> because free libraries have no consistent set of unbranded product shots.
 
 ## What's inside
 

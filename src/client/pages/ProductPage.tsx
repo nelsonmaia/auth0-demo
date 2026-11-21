@@ -1,12 +1,14 @@
 import { useAtomValue } from "@effect/atom-react"
 import { useEffect, useRef, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router"
-import type { Product } from "../../shared/Domain.ts"
+import type { Product, SportId } from "../../shared/Domain.ts"
 import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { type ArtView, ProductArt } from "../art/ProductArt.tsx"
 import { ChevronLeft, ChevronRight, StarIcon, StoreIcon, TruckIcon } from "../components/Icons.tsx"
+import { Photo } from "../components/Photo.tsx"
 import { AsyncView, ErrorState, FavouriteButton, Price, ProductCarousel, productLabel, useAddToBag } from "../components/ui.tsx"
 import { formatMoney } from "../format.ts"
+import type { PhotoName } from "../photos.ts"
 import { productAtom, productsAtom } from "../state.ts"
 
 export function ProductPage() {
@@ -32,13 +34,23 @@ export function ProductPage() {
 
 const views: ReadonlyArray<ArtView> = ["side", "mirror", "top", "detail"]
 
+/** A real "in action" photo for each sport, shown as the last gallery slide. */
+const actionPhoto: Record<SportId, PhotoName> = {
+  running: "action-running",
+  training: "sport-training",
+  lifestyle: "sport-lifestyle",
+  basketball: "action-basketball",
+  trail: "sport-trail"
+}
+
 function Gallery({ product, colorIndex }: { product: Product; colorIndex: number }) {
   const [active, setActive] = useState(0)
   const track = useRef<HTMLDivElement>(null)
   const color = product.colors[colorIndex] ?? product.colors[0]
+  const count = views.length + 1
 
   const show = (index: number) => {
-    const next = (index + views.length) % views.length
+    const next = (index + count) % count
     setActive(next)
     const el = track.current
     if (el && el.scrollWidth > el.clientWidth) el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" })
@@ -60,6 +72,16 @@ function Gallery({ product, colorIndex }: { product: Product; colorIndex: number
             <ProductArt kind={product.art} paint={color} view={view} />
           </button>
         ))}
+        <button
+          type="button"
+          role="listitem"
+          className={active === views.length ? "is-active" : undefined}
+          onMouseEnter={() => show(views.length)}
+          onClick={() => show(views.length)}
+          aria-label="View in action"
+        >
+          <Photo name={actionPhoto[product.sport]} className="thumb-photo" />
+        </button>
       </div>
       <div className="gallery-main">
         <div
@@ -75,6 +97,9 @@ function Gallery({ product, colorIndex }: { product: Product; colorIndex: number
               <ProductArt kind={product.art} paint={color} view={view} label={`${product.name} in ${color.name}, view ${index + 1}`} />
             </div>
           ))}
+          <div className={`gallery-slide ${active === views.length ? "is-active" : ""}`}>
+            <Photo name={actionPhoto[product.sport]} className="slide-photo" />
+          </div>
         </div>
         <div className="gallery-arrows">
           <button type="button" className="round-button light" aria-label="Previous image" onClick={() => show(active - 1)}>
@@ -85,7 +110,7 @@ function Gallery({ product, colorIndex }: { product: Product; colorIndex: number
           </button>
         </div>
         <div className="gallery-dots" aria-hidden="true">
-          {views.map((view, index) => <span key={view} className={index === active ? "is-active" : undefined} />)}
+          {Array.from({ length: count }, (_, index) => <span key={index} className={index === active ? "is-active" : undefined} />)}
         </div>
       </div>
     </div>

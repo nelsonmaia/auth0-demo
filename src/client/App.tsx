@@ -3,7 +3,7 @@ import { Layout } from "./components/Layout.tsx"
 import { CartPage } from "./pages/Cart.tsx"
 import { CheckoutPage } from "./pages/Checkout.tsx"
 import { HomePage } from "./pages/Home.tsx"
-import { AccountPage, FavouritesPage, NotFoundPage, OrderPage } from "./pages/Other.tsx"
+import { AccountPage, CreditsPage, FavouritesPage, NotFoundPage, OrderPage } from "./pages/Other.tsx"
 import { ProductListPage } from "./pages/ProductList.tsx"
 import { ProductPage } from "./pages/ProductPage.tsx"
 
@@ -20,6 +20,7 @@ const router = createBrowserRouter([
       { path: "order/:id", element: <OrderPage /> },
       { path: "favourites", element: <FavouritesPage /> },
       { path: "account", element: <AccountPage /> },
+      { path: "credits", element: <CreditsPage /> },
       { path: "*", element: <NotFoundPage /> }
     ]
   }
