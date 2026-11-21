@@ -1,0 +1,361 @@
+import LoginId from "@auth0/auth0-acul-js/login-id"
+import LoginPassword from "@auth0/auth0-acul-js/login-password"
+import SignupId from "@auth0/auth0-acul-js/signup-id"
+import SignupPassword from "@auth0/auth0-acul-js/signup-password"
+import PasskeyEnrollment from "@auth0/auth0-acul-js/passkey-enrollment"
+import ResetPasswordRequest from "@auth0/auth0-acul-js/reset-password-request"
+import ResetPasswordEmail from "@auth0/auth0-acul-js/reset-password-email"
+import ResetPassword from "@auth0/auth0-acul-js/reset-password"
+import ResetPasswordSuccess from "@auth0/auth0-acul-js/reset-password-success"
+import ResetPasswordError from "@auth0/auth0-acul-js/reset-password-error"
+import { h } from "./dom.ts"
+import {
+  STORE_URL,
+  captcha,
+  divider,
+  errorBanner,
+  field,
+  fieldError,
+  form,
+  googleButton,
+  identifierRow,
+  links,
+  primaryButton,
+  str,
+  title,
+} from "./ui.ts"
+
+type Connection = { name: string; strategy: string }
+
+function googleConnection(conns: ReadonlyArray<Connection> | null | undefined): Connection | undefined {
+  return conns?.find((c) => c.strategy === "google-oauth2" || c.name === "google-oauth2")
+}
+
+function raw(data: FormData, key: string): string {
+  const v = data.get(key)
+  return typeof v === "string" ? v : ""
+}
+
+/** Live checklist for the tenant's password policy. */
+function passwordRules(
+  input: HTMLInputElement,
+  validate: (pw: string) => { results: ReadonlyArray<{ code: string; label: string; status: string; items?: ReadonlyArray<{ label: string; status: string }> }> },
+): HTMLElement {
+  const list = h("ul", { class: "k-rules", "aria-live": "polite" })
+  const render = () => {
+    const { results: rules } = validate(input.value)
+    list.replaceChildren(
+      ...rules.flatMap((r) => [
+        h("li", { class: r.status === "valid" ? "ok" : "" }, r.label),
+        ...(r.items ?? []).map((i) => h("li", { class: `sub ${i.status === "valid" ? "ok" : ""}` }, i.label)),
+      ]),
+    )
+  }
+  input.addEventListener("input", render)
+  render()
+  return list
+}
+
+// ---------------------------------------------------------------------------
+// Sign in / join: step 1 (email)
+// ---------------------------------------------------------------------------
+export function loginId(): HTMLElement {
+  const sdk = new LoginId()
+  const errors = sdk.getErrors()
+  const allowed = sdk.getLoginIdentifiers() ?? ["email"]
+  const emailOnly = allowed.length === 1 && allowed[0] === "email"
+  const label = emailOnly ? "Email" : allowed.includes("email") ? "Email or username" : "Username"
+  const prefill = sdk.untrustedData.submittedFormData?.username as string | undefined
+
+  const id = field({
+    name: "username",
+    label,
+    type: emailOnly ? "email" : "text",
+    value: prefill,
+    autocomplete: "username webauthn",
+    error: fieldError(errors, "username"),
+  })
+  const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
+  const google = googleConnection(sdk.transaction.alternateConnections)
+
+  const f = form(
+    [errorBanner(errors, ["username", "captcha"]), id.el, cap.el, primaryButton("Continue")],
+    (data) => sdk.login({ username: str(data, "username"), captcha: cap.value() }),
+  )
+
+  if (sdk.transaction.showPasskeyAutofill) sdk.registerPasskeyAutofill("k-username").catch(() => {})
+
+  return h(
+    "div",
+    {},
+    ...title("Enter your email to join us or sign in."),
+    f,
+    google || sdk.transaction.isPasskeyEnabled ? divider() : null,
+    google ? googleButton(() => sdk.federatedLogin({ connection: google.name })) : null,
+    sdk.transaction.isPasskeyEnabled
+      ? h(
+          "button",
+          { type: "button", class: "k-btn k-btn-outline", onclick: () => sdk.passkeyLogin() },
+          "Sign in with a passkey",
+        )
+      : null,
+    links(
+      sdk.transaction.isSignupEnabled ? ["New to KINETIK? Join us", sdk.screen.signupLink] : null,
+      sdk.transaction.isForgotPasswordEnabled ? ["Forgot password?", sdk.screen.resetPasswordLink] : null,
+    ),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sign in: step 2 (password)
+// ---------------------------------------------------------------------------
+export function loginPassword(): HTMLElement {
+  const sdk = new LoginPassword()
+  const errors = sdk.getErrors()
+  const username = sdk.screen.data?.username ?? ""
+  const pw = field({
+    name: "password",
+    label: "Password",
+    type: "password",
+    autocomplete: "current-password",
+    error: fieldError(errors, "password"),
+  })
+  const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
+  const google = googleConnection(sdk.transaction.alternateConnections)
+
+  return h(
+    "div",
+    {},
+    ...title("What's your password?"),
+    identifierRow(username, sdk.screen.editIdentifierLink),
+    form(
+      [
+        errorBanner(errors, ["password", "captcha"]),
+        h("input", { type: "hidden", name: "username", value: username, autocomplete: "username" }),
+        pw.el,
+        cap.el,
+        sdk.transaction.isForgotPasswordEnabled ? links(["Forgot password?", sdk.screen.resetPasswordLink]) : null,
+        primaryButton("Sign In"),
+      ],
+      (data) => sdk.login({ username, password: raw(data, "password"), captcha: cap.value() }),
+    ),
+    google ? divider() : null,
+    google ? googleButton(() => sdk.federatedLogin({ connection: google.name })) : null,
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Join: step 1 (email)
+// ---------------------------------------------------------------------------
+export function signupId(): HTMLElement {
+  const sdk = new SignupId()
+  const errors = sdk.getErrors()
+  const prefill = sdk.untrustedData.submittedFormData?.email as string | undefined
+  const email = field({
+    name: "email",
+    label: "Email",
+    type: "email",
+    value: prefill,
+    autocomplete: "email",
+    error: fieldError(errors, "email"),
+  })
+  const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
+  const google = googleConnection(sdk.transaction.alternateConnections)
+
+  return h(
+    "div",
+    {},
+    ...title("Become a KINETIK Member", "Create your profile to get free standard delivery and member checkout."),
+    form(
+      [errorBanner(errors, ["email", "captcha"]), email.el, cap.el, primaryButton("Continue")],
+      (data) => sdk.signup({ email: str(data, "email"), captcha: cap.value() }),
+    ),
+    google ? divider() : null,
+    google ? googleButton(() => sdk.federatedSignup({ connection: google.name }), "Join with Google") : null,
+    links(["Already a member? Sign in", sdk.screen.loginLink]),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Join: step 2 (password)
+// ---------------------------------------------------------------------------
+export function signupPassword(): HTMLElement {
+  const sdk = new SignupPassword()
+  const errors = sdk.getErrors()
+  const email = sdk.screen.data?.email ?? ""
+  const pw = field({
+    name: "password",
+    label: "Create a password",
+    type: "password",
+    autocomplete: "new-password",
+    error: fieldError(errors, "password"),
+  })
+  const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
+
+  return h(
+    "div",
+    {},
+    ...title("Now create a password."),
+    identifierRow(email, sdk.screen.editLink),
+    form(
+      [
+        errorBanner(errors, ["password", "captcha"]),
+        h("input", { type: "hidden", name: "email", value: email, autocomplete: "username" }),
+        pw.el,
+        passwordRules(pw.input, (p) => sdk.validatePassword(p)),
+        cap.el,
+        primaryButton("Create Account"),
+      ],
+      (data) => sdk.signup({ email, password: raw(data, "password"), captcha: cap.value() }),
+    ),
+    links(["Already a member? Sign in", sdk.screen.loginLink]),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Passkey prompt shown after password sign-in
+// ---------------------------------------------------------------------------
+export function passkeyEnrollment(): HTMLElement {
+  const sdk = new PasskeyEnrollment()
+  const errors = sdk.getErrors()
+  const create = h("button", { type: "button", class: "k-btn k-btn-primary" }, "Create a Passkey")
+  create.addEventListener("click", () => {
+    create.classList.add("is-busy")
+    sdk.continuePasskeyEnrollment().catch(() => create.classList.remove("is-busy"))
+  })
+  const dontAsk = h("input", { type: "checkbox", id: "k-dont-ask" })
+  return h(
+    "div",
+    {},
+    ...title("Faster sign-in with a passkey", "Use your fingerprint, face or screen lock instead of a password next time."),
+    errorBanner(errors),
+    h("div", { class: "k-stack" }, create,
+      h("button", {
+        type: "button",
+        class: "k-btn k-btn-outline",
+        onclick: () => sdk.abortPasskeyEnrollment({ doNotShowAgain: dontAsk.checked }),
+      }, "Not Now"),
+      h("label", { class: "k-check", for: "k-dont-ask" }, dontAsk, "Don't ask me again"),
+    ),
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Password reset
+// ---------------------------------------------------------------------------
+export function resetPasswordRequest(): HTMLElement {
+  const sdk = new ResetPasswordRequest()
+  const errors = sdk.getErrors()
+  const email = field({
+    name: "username",
+    label: "Email",
+    type: "email",
+    value: sdk.screen.data?.email ?? sdk.screen.data?.username,
+    autocomplete: "email",
+    error: fieldError(errors, "username") ?? fieldError(errors, "email"),
+  })
+  const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
+  return h(
+    "div",
+    {},
+    ...title("Reset your password", "Enter your email and we'll send you a link to set a new password."),
+    form(
+      [errorBanner(errors, ["username", "email", "captcha"]), email.el, cap.el, primaryButton("Send Reset Link")],
+      (data) => sdk.resetPassword({ username: str(data, "username"), captcha: cap.value() }),
+    ),
+    h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.backToLogin() } }, "Back to sign in")),
+  )
+}
+
+export function resetPasswordEmail(): HTMLElement {
+  const sdk = new ResetPasswordEmail()
+  const who = sdk.screen.data?.email ?? sdk.screen.data?.username
+  const resend = h("button", { type: "button", class: "k-btn k-btn-outline" }, "Resend Email")
+  resend.addEventListener("click", () => {
+    resend.classList.add("is-busy")
+    sdk.resendEmail().catch(() => resend.classList.remove("is-busy"))
+  })
+  return h(
+    "div",
+    {},
+    ...title("Check your email", who ? `We've sent a reset link to ${who}.` : "We've sent you a reset link."),
+    errorBanner(sdk.getErrors()),
+    h("div", { class: "k-stack" }, resend),
+  )
+}
+
+export function resetPassword(): HTMLElement {
+  const sdk = new ResetPassword()
+  const errors = sdk.getErrors()
+  const pw = field({
+    name: "password-reset",
+    label: "New password",
+    type: "password",
+    autocomplete: "new-password",
+    error: fieldError(errors, "password-reset"),
+  })
+  const again = field({
+    name: "re-enter-password",
+    label: "Confirm new password",
+    type: "password",
+    autocomplete: "new-password",
+    error: fieldError(errors, "re-enter-password"),
+  })
+  const mismatch = h("span", { class: "k-field-error", hidden: true }, "Passwords don't match.")
+  return h(
+    "div",
+    {},
+    ...title("Set a new password", sdk.screen.data?.username ? `For ${sdk.screen.data.username}` : undefined),
+    form(
+      [
+        errorBanner(errors, ["password-reset", "re-enter-password"]),
+        pw.el,
+        passwordRules(pw.input, (p) => sdk.validatePassword(p)),
+        again.el,
+        mismatch,
+        primaryButton("Reset Password"),
+      ],
+      async (data) => {
+        const a = raw(data, "password-reset")
+        const b = raw(data, "re-enter-password")
+        mismatch.hidden = a === b
+        if (a !== b) throw new Error("Passwords don't match")
+        await sdk.resetPassword({ "password-reset": a, "re-enter-password": b })
+      },
+    ),
+  )
+}
+
+export function resetPasswordSuccess(): HTMLElement {
+  new ResetPasswordSuccess()
+  return h(
+    "div",
+    {},
+    ...title("Password updated", "You can now sign in with your new password."),
+    h("div", { class: "k-stack" }, h("a", { class: "k-btn k-btn-primary", href: STORE_URL }, "Back to KINETIK")),
+  )
+}
+
+export function resetPasswordError(): HTMLElement {
+  const sdk = new ResetPasswordError()
+  return h(
+    "div",
+    {},
+    ...title("This link has expired", "Reset links can only be used once and expire after a while. Request a new one from the sign-in page."),
+    errorBanner(sdk.getErrors()),
+    h("div", { class: "k-stack" }, h("a", { class: "k-btn k-btn-primary", href: STORE_URL }, "Back to KINETIK")),
+  )
+}
+
+export const screens: Record<string, () => HTMLElement> = {
+  "login-id": loginId,
+  "login-password": loginPassword,
+  "signup-id": signupId,
+  "signup-password": signupPassword,
+  "passkey-enrollment": passkeyEnrollment,
+  "reset-password-request": resetPasswordRequest,
+  "reset-password-email": resetPasswordEmail,
+  "reset-password": resetPassword,
+  "reset-password-success": resetPasswordSuccess,
+  "reset-password-error": resetPasswordError,
+}

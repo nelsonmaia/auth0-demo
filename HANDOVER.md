@@ -190,6 +190,26 @@ Behaviour to know about:
   `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE` (browser) and
   `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` (server).
 
+### Custom login page (ACUL)
+
+The Universal Login screens for the KINETIK Store app use Advanced
+Customizations (ACUL) with the store's look. Code is in `acul/` (see
+`acul/README.md`); assets are served from https://kinetik-login.vercel.app
+(Vercel project `kinetik-login`, deployed from source files, no Git link).
+
+- 10 screens are in `rendering_mode: "advanced"` with a `filters` entry for
+  the KINETIK client only, so other apps in this shared tenant (older IKEA
+  and Starbucks-style demos) still get standard rendering. Note that
+  `login-passwordless-email-code` was already `advanced` with no filter
+  before this work; it belongs to another demo and was left alone.
+- The head tags pin SRI hashes (`integrity` must be a **list** in the
+  Management API). After changing the JS or CSS, redeploy and re-PATCH
+  `acul/auth0/rendering.json` with the new hashes, or the page goes blank.
+- `acul/auth0/previous-rendering.json` holds the old (unused) head tags those
+  screens had, in case another demo needs them back.
+- Verified live at phone size: store → Sign In → KINETIK email screen →
+  password screen → error state → Join screen.
+
 ### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their
@@ -271,3 +291,12 @@ Behaviour to know about:
   (Member)" and prefilled fields → place order → `/account` lists it and
   "Developer details" shows `sub` and scopes → reload stays signed in →
   Sign Out.
+
+## 9. Session notes (custom login page)
+
+- A later session reached the Management API through `AUTH0_API2_CLIENT_ID`
+  and `AUTH0_API2_CLIENT_SECRET` environment variables (client credentials,
+  audience `https://nelson.jp.auth0.com/api/v2/`). They belong to the
+  tenant's "API Explorer Application", which has every Management API scope.
+  The user was advised to swap it for a least-privilege M2M app and remove
+  the variables when done. Never print or commit their values.

@@ -1,0 +1,594 @@
+{
+  "configs": [
+    {
+      "prompt": "login-id",
+      "screen": "login-id",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "login-password",
+      "screen": "login-password",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "signup-id",
+      "screen": "signup-id",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "signup-password",
+      "screen": "signup-password",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "passkeys",
+      "screen": "passkey-enrollment",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "reset-password",
+      "screen": "reset-password-request",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "reset-password",
+      "screen": "reset-password-email",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "reset-password",
+      "screen": "reset-password",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "reset-password",
+      "screen": "reset-password-success",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    },
+    {
+      "prompt": "reset-password",
+      "screen": "reset-password-error",
+      "rendering_mode": "advanced",
+      "filters": {
+        "match_type": "includes_any",
+        "clients": [
+          {
+            "id": "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7"
+          }
+        ]
+      },
+      "head_tags": [
+        {
+          "tag": "meta",
+          "attributes": {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "preconnect",
+            "href": "https://fonts.gstatic.com",
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap"
+          }
+        },
+        {
+          "tag": "link",
+          "attributes": {
+            "rel": "stylesheet",
+            "href": "https://kinetik-login.vercel.app/kinetik-login.css",
+            "integrity": [
+              "sha384-2UZ2r5MDTiy9Z6OnooBYd4i+4eRzdJDxkM+k5R+NpGsknoCerklsrGtNWwm/NxFm"
+            ],
+            "crossorigin": "anonymous"
+          }
+        },
+        {
+          "tag": "script",
+          "attributes": {
+            "src": "https://kinetik-login.vercel.app/kinetik-login.js",
+            "type": "module",
+            "integrity": [
+              "sha384-6l2gos9WO7fmKcN068h2WSo1gkCdpuicMV32LI6oynoVbZFBs6lVDX+0E3t2FwlV"
+            ],
+            "crossorigin": "anonymous"
+          }
+        }
+      ]
+    }
+  ]
+}

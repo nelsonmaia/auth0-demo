@@ -1,0 +1,462 @@
+/* KINETIK Universal Login: same tokens as the store (src/client/styles.css). */
+:root {
+  --text: #111111;
+  --muted: #707072;
+  --line: #e5e5e5;
+  --line-strong: #cacacb;
+  --surface: #f5f5f5;
+  --bg: #ffffff;
+  --danger: #d30005;
+  --success: #007d48;
+  --font: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --display: "Anton", "Oswald", Impact, "Arial Narrow", sans-serif;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body.kinetik {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.kinetik a {
+  color: inherit;
+}
+
+.kinetik button,
+.kinetik input {
+  font: inherit;
+  color: inherit;
+}
+
+.kinetik h1,
+.kinetik p {
+  margin: 0;
+}
+
+.k-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Layout ------------------------------------------------------------------ */
+.k-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+}
+
+.k-photo {
+  display: none;
+}
+
+.k-main {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 32px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.k-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 40px;
+}
+
+.k-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.k-back {
+  font-size: 14px;
+  color: var(--muted) !important;
+  text-decoration: none;
+}
+
+.k-back:hover {
+  color: var(--text) !important;
+  text-decoration: underline;
+}
+
+.k-card {
+  flex: 1;
+}
+
+.k-legal {
+  margin-top: 40px !important;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (min-width: 960px) {
+  .k-page {
+    grid-template-columns: minmax(0, 1.1fr) minmax(480px, 1fr);
+  }
+  .k-photo {
+    display: flex;
+    align-items: flex-end;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.65) 100%),
+      url("https://kinetik-store-zeta.vercel.app/photos/hero-sprint.webp") center / cover no-repeat,
+      #111;
+    color: #fff;
+    padding: 56px;
+  }
+  .k-main {
+    padding: 40px 56px;
+    max-width: 560px;
+    justify-content: center;
+  }
+  .k-card {
+    flex: 0 0 auto;
+  }
+}
+
+.k-photo-copy {
+  max-width: 520px;
+}
+
+.k-kicker {
+  font-weight: 500;
+  margin-bottom: 8px !important;
+}
+
+.k-display {
+  font-family: var(--display);
+  font-size: clamp(64px, 8vw, 120px);
+  line-height: 0.9;
+  text-transform: uppercase;
+  margin-bottom: 16px !important;
+}
+
+.k-photo-sub {
+  color: #e5e5e5;
+  max-width: 420px;
+}
+
+/* Headings ---------------------------------------------------------------- */
+.k-title {
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px !important;
+}
+
+.k-sub {
+  color: var(--muted);
+  margin-bottom: 8px !important;
+}
+
+/* Form -------------------------------------------------------------------- */
+.k-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.k-field {
+  position: relative;
+  display: block;
+}
+
+.k-field input {
+  width: 100%;
+  height: 56px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 22px 16px 6px;
+  font-size: 16px;
+  background: var(--bg);
+  appearance: none;
+}
+
+.k-field input[type="password"],
+.k-field:has(.k-reveal) input {
+  padding-right: 72px;
+}
+
+.k-field input:focus {
+  outline: none;
+  border: 2px solid var(--text);
+  padding: 21px 15px 5px;
+}
+
+.k-field:has(.k-reveal) input:focus {
+  padding-right: 71px;
+}
+
+.k-field > span {
+  position: absolute;
+  left: 17px;
+  top: 17px;
+  color: var(--muted);
+  pointer-events: none;
+  transition: all 0.15s ease;
+}
+
+.k-field input:focus + span,
+.k-field input:not(:placeholder-shown) + span {
+  top: 7px;
+  font-size: 12px;
+}
+
+.k-field.has-error input {
+  border-color: var(--danger);
+}
+
+.k-field.has-error > span,
+.k-field-error {
+  color: var(--danger);
+}
+
+.k-field-error {
+  display: block;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.k-reveal {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: none;
+  padding: 8px;
+  font-size: 14px !important;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.k-alert {
+  color: var(--danger);
+  background: #fdecec;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.k-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.k-identity a {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.k-rules {
+  list-style: none;
+  margin: -4px 0 0;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+}
+
+.k-rules li::before {
+  content: "✕";
+  display: inline-block;
+  width: 18px;
+  color: var(--muted);
+}
+
+.k-rules li.sub {
+  padding-left: 18px;
+}
+
+.k-rules li.ok {
+  color: var(--success);
+}
+
+.k-rules li.ok::before {
+  content: "✓";
+  color: var(--success);
+}
+
+.k-captcha {
+  display: grid;
+  gap: 12px;
+}
+
+.k-captcha img {
+  max-width: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.k-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.k-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--text);
+}
+
+/* Buttons ----------------------------------------------------------------- */
+.k-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 1.5px solid transparent;
+  font-size: 16px !important;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.k-btn + .k-btn {
+  margin-top: 12px;
+}
+
+.k-btn-primary {
+  background: var(--text);
+  color: #fff !important;
+}
+
+.k-btn-primary:hover {
+  background: var(--muted);
+}
+
+.k-btn-outline {
+  background: var(--bg);
+  border-color: var(--line-strong);
+}
+
+.k-btn-outline:hover {
+  border-color: var(--text);
+}
+
+.k-btn:disabled,
+.k-btn.is-busy {
+  pointer-events: none;
+}
+
+.k-btn.is-busy {
+  color: transparent !important;
+  position: relative;
+}
+
+.k-btn.is-busy::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-color: #fff #fff transparent transparent;
+  animation: k-spin 0.7s linear infinite;
+}
+
+.k-btn-outline.is-busy::after {
+  border-color: var(--text) var(--text) transparent transparent;
+}
+
+@keyframes k-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.k-stack {
+  display: grid;
+  margin-top: 24px;
+}
+
+.k-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.k-divider::before,
+.k-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.k-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 24px !important;
+  font-size: 14px;
+}
+
+.k-form .k-links {
+  margin-top: -4px !important;
+  justify-content: flex-end;
+}
+
+.k-links a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.k-links a:hover {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-field > span,
+  .k-btn {
+    transition: none;
+  }
+}
