@@ -6,10 +6,13 @@ import { ProductArt } from "../art/ProductArt.tsx"
 import { HeartIcon, TrashIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, Price, Spinner, useFavourite } from "../components/ui.tsx"
 import { formatMoney, formatTotal, plural } from "../format.ts"
+import { authAtom, useAuthActions } from "../auth.tsx"
 import { Bag, cartAtom, quoteAtom } from "../state.ts"
 
 export function CartPage() {
   const [lines, setLines] = useAtom(cartAtom)
+  const isMember = useAtomValue(authAtom).isAuthenticated
+  const { signIn } = useAuthActions()
   const quote = useAtomValue(quoteAtom)
   const navigate = useNavigate()
 
@@ -94,14 +97,24 @@ export function CartPage() {
               </div>
               <aside className="summary-column">
                 <SummaryTotals quote={value} waiting={waiting} title="Summary" />
-                <div className="summary-buttons">
-                  <button type="button" className="button button-primary button-lg button-block" onClick={() => navigate("/checkout")}>
-                    Guest Checkout
-                  </button>
-                  <Link to="/account?from=checkout" className="button button-primary button-lg button-block">
-                    Member Checkout
-                  </Link>
-                </div>
+                {isMember ? (
+                  <div className="summary-buttons">
+                    <p className="member-badge">Member pricing applied: free standard delivery</p>
+                    <button type="button" className="button button-primary button-lg button-block" onClick={() => navigate("/checkout")}>
+                      Checkout
+                    </button>
+                  </div>
+                ) : (
+                  <div className="summary-buttons">
+                    <button type="button" className="button button-primary button-lg button-block" onClick={() => navigate("/checkout")}>
+                      Guest Checkout
+                    </button>
+                    <button type="button" className="button button-primary button-lg button-block" onClick={() => signIn("/checkout")}>
+                      Member Checkout
+                    </button>
+                    <p className="muted small">Members get free standard delivery on every order.</p>
+                  </div>
+                )}
               </aside>
             </div>
           </>
@@ -205,7 +218,11 @@ export function SummaryTotals({ quote, waiting, title }: { quote: Quote; waiting
         </div>
         <div>
           <dt>{quote.delivery === "pickup" ? "Pick Up" : `Estimated ${option?.label ?? "Delivery"} & Handling`}</dt>
-          <dd>{quote.deliveryFee === 0 ? "Free" : formatTotal(quote.deliveryFee)}</dd>
+          <dd>
+            {quote.deliveryFee === 0
+              ? quote.member && quote.delivery === "standard" ? "Free (Member)" : "Free"
+              : formatTotal(quote.deliveryFee)}
+          </dd>
         </div>
         {quote.savings > 0 ? (
           <div className="savings">

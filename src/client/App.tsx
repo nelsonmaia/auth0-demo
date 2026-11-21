@@ -7,7 +7,7 @@ import { AccountPage, CreditsPage, FavouritesPage, NotFoundPage, OrderPage } fro
 import { ProductListPage } from "./pages/ProductList.tsx"
 import { ProductPage } from "./pages/ProductPage.tsx"
 
-const router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [

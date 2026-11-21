@@ -118,21 +118,42 @@ restarts, and on Vercel each serverless instance has its own copy. That's fine
 for a demo. For real persistence, add a database-backed `Catalog`/`Orders`
 layer (for example with `effect/sql`).
 
-## Next step: Auth0
+## Sign-in with Auth0
 
-The seams are already there:
+Members sign in with [Auth0](https://auth0.com) Universal Login on the tenant's
+custom domain **nelson.jp.mmatias.co.uk**.
 
-- `/account`, the "Join Us / Sign In" links and the **Member Checkout** button
-  are placeholders for Auth0 Universal Login (`@auth0/auth0-react` in the
-  browser).
-- `src/shared/Api.ts` is where an `HttpApiMiddleware` with
-  `HttpApiSecurity.bearer` would go. It would protect `/api/orders` and
-  provide a `CurrentUser` service to the handlers.
-- On the server, Effect's `effect/jose` module can verify Auth0 access tokens
-  against your tenant's JWKS.
-- Orders would then be linked to the signed-in user, and an "order history"
-  endpoint would be added.
+| Piece | Value |
+| --- | --- |
+| Application | "KINETIK Store" single-page application, client ID `9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7` |
+| Callback / logout / web origins | `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001` |
+| API (audience) | "KINETIK Store API", `https://kinetik-store-zeta.vercel.app/api`, RS256 |
+| Scopes | `read:orders`, `create:orders` |
+| Connections | `Username-Password-Authentication`, `google-oauth2` |
 
-You'll need an Auth0 tenant, an SPA application (Domain + Client ID) and an
-API (Audience), with the deployed URL added to the allowed callback, logout
-and web-origin URLs.
+**In the browser** (`src/client/auth.tsx`): `@auth0/auth0-react` with refresh
+tokens in local storage, so members stay signed in on mobile Safari. Join Us
+opens the sign-up screen, Sign In returns you to the page you were on, and
+**Member Checkout** signs you in and brings you back to checkout. The
+client side of the `Authorization` middleware asks the SDK for an access token
+and attaches it to member API calls.
+
+**On the server** (`src/server/Auth.ts`): the `Authorization` middleware (an
+Effect `HttpApiMiddleware` with bearer security) verifies every token with
+`effect/jose`. It checks the RS256 signature against the tenant's JWKS, plus the
+issuer, audience and expiry. Handlers then check scopes:
+
+| Endpoint | Needs |
+| --- | --- |
+| `GET /api/me` | a valid token |
+| `POST /api/me/cart/quote` | a valid token (member pricing: free standard delivery) |
+| `POST /api/me/orders` | `create:orders` |
+| `GET /api/me/orders` | `read:orders` (only your own orders) |
+
+Guests can still check out through the public endpoints. The Account page shows
+your orders and, under "Developer details", what the API verified from your
+token.
+
+Configuration is public and has defaults in code. To override it, use
+`VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` and `VITE_AUTH0_AUDIENCE` for the
+browser build, and `AUTH0_DOMAIN` and `AUTH0_AUDIENCE` for the server.

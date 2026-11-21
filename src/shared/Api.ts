@@ -1,5 +1,6 @@
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, OpenApi } from "effect/http-api"
+import { Authorization, Forbidden, Member } from "./Auth.ts"
 import {
   CategoryId,
   Gender,
@@ -75,10 +76,39 @@ export class CheckoutApi extends HttpApiGroup.make("checkout")
   .annotateMerge(OpenApi.annotations({ title: "Checkout", description: "Price the bag and place orders" }))
 {}
 
+/**
+ * Member-only endpoints. Every request needs a valid Auth0 access token for
+ * this API; placing and reading orders also need the matching scope.
+ */
+export class AccountApi extends HttpApiGroup.make("account")
+  .add(
+    HttpApiEndpoint.get("me", "/me", {
+      success: Member
+    }),
+    HttpApiEndpoint.post("quote", "/me/cart/quote", {
+      payload: QuoteRequest,
+      success: Quote,
+      error: [ProductNotFound, InvalidColor, InvalidSize]
+    }),
+    HttpApiEndpoint.post("placeOrder", "/me/orders", {
+      payload: PlaceOrderRequest,
+      success: Order,
+      error: [ProductNotFound, InvalidColor, InvalidSize, OutOfStock, Forbidden]
+    }),
+    HttpApiEndpoint.get("orders", "/me/orders", {
+      success: Schema.Array(Order),
+      error: Forbidden
+    })
+  )
+  .middleware(Authorization)
+  .annotateMerge(OpenApi.annotations({ title: "Account", description: "Member pricing, checkout and order history (Auth0)" }))
+{}
+
 export class StoreApi extends HttpApi.make("store-api")
   .add(SystemApi)
   .add(CatalogApi)
   .add(CheckoutApi)
+  .add(AccountApi)
   .prefix("/api")
   .annotateMerge(OpenApi.annotations({ title: "KINETIK Store API" }))
 {}

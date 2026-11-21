@@ -3,6 +3,7 @@ import { Effect, Schema } from "effect"
 import { Atom } from "effect/reactivity"
 import type { CategoryId, DeliveryMethod, Gender, Order, Product, ProductSort, SportId } from "../shared/Domain.ts"
 import { CartLine, ProductId, Quantity, QuoteRequest } from "../shared/Domain.ts"
+import { authAtom } from "./auth.tsx"
 import { StoreClient } from "./StoreClient.ts"
 
 // ---------------------------------------------------------------------------
@@ -113,16 +114,42 @@ const productFamily = Atom.family((id: string) =>
 )
 export const productAtom = (id: string) => productFamily(id)
 
-/** Server-side pricing of the bag. Re-runs whenever the bag or delivery method changes. */
+/**
+ * Server-side pricing of the bag. Re-runs whenever the bag, the delivery method
+ * or the sign-in state changes; signed-in members get member pricing.
+ */
 export const quoteAtom = StoreClient.runtime.atom((get) =>
   Effect.gen(function*() {
     const lines = get(cartAtom)
     const delivery = get(deliveryAtom)
+    const { isAuthenticated } = get(authAtom)
     const client = yield* StoreClient
-    return yield* client.checkout.quote({
-      payload: new QuoteRequest({ lines: lines.map((line) => new CartLine(line)), delivery })
-    })
+    const payload = new QuoteRequest({ lines: lines.map((line) => new CartLine(line)), delivery })
+    if (!isAuthenticated) return yield* client.checkout.quote({ payload })
+    return yield* client.account.quote({ payload }).pipe(
+      // An expired session falls back to guest pricing instead of failing.
+      Effect.catchTag("Unauthorized", () => client.checkout.quote({ payload }))
+    )
   })
 )
 
 export const placeOrderAtom = StoreClient.mutation("checkout", "placeOrder")
+export const placeMemberOrderAtom = StoreClient.mutation("account", "placeOrder")
+
+/** The signed-in member's orders (fetched fresh each time the page mounts). */
+export const myOrdersAtom = StoreClient.runtime.atom((get) =>
+  Effect.gen(function*() {
+    if (!get(authAtom).isAuthenticated) return []
+    const client = yield* StoreClient
+    return yield* client.account.orders()
+  })
+)
+
+/** What the API sees for the signed-in member: user id and granted scopes. */
+export const meAtom = StoreClient.runtime.atom((get) =>
+  Effect.gen(function*() {
+    if (!get(authAtom).isAuthenticated) return undefined
+    const client = yield* StoreClient
+    return yield* client.account.me()
+  })
+)

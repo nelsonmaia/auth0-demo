@@ -3,9 +3,10 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Link, Outlet, ScrollRestoration, useLocation, useNavigate } from "react-router"
 import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
+import { authAtom, useAuthActions } from "../auth.tsx"
 import { formatMoney } from "../format.ts"
 import { cartCountAtom, favouritesAtom, productsAtom, toastAtom } from "../state.ts"
-import { BagIcon, CheckIcon, ChevronRight, CloseIcon, HeartIcon, MenuIcon, SearchIcon } from "./Icons.tsx"
+import { BagIcon, CheckIcon, ChevronRight, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "./Icons.tsx"
 import { AsyncView, Price } from "./ui.tsx"
 
 export function Logo() {
@@ -246,6 +247,8 @@ function SearchResults({ q, onPick, onSeeAll }: { q: string; onPick: () => void;
 function Header({ onOpenMenu, onOpenSearch }: { onOpenMenu: () => void; onOpenSearch: () => void }) {
   const count = useAtomValue(cartCountAtom)
   const favourites = useAtomValue(favouritesAtom)
+  const auth = useAtomValue(authAtom)
+  const { signIn, join, signOut } = useAuthActions()
   const location = useLocation()
   const [openMenu, setOpenMenu] = useState<string | undefined>()
   const menu = menus.find((m) => m.key === openMenu)
@@ -262,9 +265,19 @@ function Header({ onOpenMenu, onOpenSearch }: { onOpenMenu: () => void; onOpenSe
             <span aria-hidden="true">|</span>
             <a href="/api/docs">Help</a>
             <span aria-hidden="true">|</span>
-            <Link to="/account">Join Us</Link>
-            <span aria-hidden="true">|</span>
-            <Link to="/account">Sign In</Link>
+            {auth.isAuthenticated && auth.user ? (
+              <>
+                <Link to="/account">Hi, {auth.user.firstName}</Link>
+                <span aria-hidden="true">|</span>
+                <button type="button" className="utility-button" onClick={() => signOut()}>Sign Out</button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="utility-button" onClick={() => join()}>Join Us</button>
+                <span aria-hidden="true">|</span>
+                <button type="button" className="utility-button" onClick={() => signIn()}>Sign In</button>
+              </>
+            )}
           </nav>
         </div>
       </div>
@@ -292,6 +305,13 @@ function Header({ onOpenMenu, onOpenSearch }: { onOpenMenu: () => void; onOpenSe
             <button type="button" className="icon-button search-icon-button" aria-label="Search" onClick={onOpenSearch}>
               <SearchIcon />
             </button>
+            <Link
+              to="/account"
+              className={`icon-button account-link ${auth.isAuthenticated ? "is-member" : ""}`}
+              aria-label={auth.isAuthenticated ? "Your account" : "Sign in or join"}
+            >
+              {auth.user?.picture ? <img src={auth.user.picture} alt="" referrerPolicy="no-referrer" /> : <UserIcon />}
+            </Link>
             <Link to="/favourites" className="icon-button favourites-link" aria-label={`Favourites (${favourites.length})`}>
               <HeartIcon />
             </Link>
@@ -324,17 +344,26 @@ function Header({ onOpenMenu, onOpenSearch }: { onOpenMenu: () => void; onOpenSe
 }
 
 function PromoBar() {
+  const auth = useAtomValue(authAtom)
+  const { join } = useAuthActions()
   return (
     <div className="promo">
       <strong>Move With Us</strong>
-      <span>
-        Free delivery on orders over {formatMoney(FREE_DELIVERY_THRESHOLD)}. <Link to="/account">Join Us</Link>
-      </span>
+      {auth.isAuthenticated ? (
+        <span>Members get free standard delivery on every order. Welcome back!</span>
+      ) : (
+        <span>
+          Free delivery on orders over {formatMoney(FREE_DELIVERY_THRESHOLD)}, or on every order for members.{" "}
+          <button type="button" className="link-button" onClick={() => join()}>Join Us</button>
+        </span>
+      )}
     </div>
   )
 }
 
 function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const auth = useAtomValue(authAtom)
+  const { signIn, join, signOut } = useAuthActions()
   const location = useLocation()
   useEffect(onClose, [location.pathname, location.search])
   useEffect(() => {
@@ -357,15 +386,25 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
             </Link>
           ))}
         </nav>
-        <div className="drawer-member">
-          <p>
-            Become a KINETIK Member for the best products, inspiration and stories in sport. <Link to="/account">Learn more</Link>
-          </p>
-          <div>
-            <Link to="/account" className="button button-primary">Join Us</Link>
-            <Link to="/account" className="button button-outline">Sign In</Link>
+        {auth.isAuthenticated && auth.user ? (
+          <div className="drawer-member">
+            <p>Hi, {auth.user.firstName}. Members get free standard delivery on every order.</p>
+            <div>
+              <Link to="/account" className="button button-primary">Your Account</Link>
+              <button type="button" className="button button-outline" onClick={() => signOut()}>Sign Out</button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="drawer-member">
+            <p>
+              Become a KINETIK Member for the best products, inspiration and stories in sport. <Link to="/account">Learn more</Link>
+            </p>
+            <div>
+              <button type="button" className="button button-primary" onClick={() => join()}>Join Us</button>
+              <button type="button" className="button button-outline" onClick={() => signIn()}>Sign In</button>
+            </div>
+          </div>
+        )}
         <nav className="drawer-links">
           <Link to="/cart"><BagIcon size={22} /> Bag</Link>
           <Link to="/favourites"><HeartIcon size={22} /> Favourites</Link>

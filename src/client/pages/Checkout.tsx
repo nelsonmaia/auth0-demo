@@ -1,14 +1,15 @@
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react"
 import { Cause, Exit, Option, Schema } from "effect"
 import { AsyncResult } from "effect/reactivity"
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { Link, useNavigate } from "react-router"
 import { Address, CartLine, Contact, PlaceOrderRequest } from "../../shared/Domain.ts"
 import { deliveryDays, deliveryFee } from "../../shared/Pricing.ts"
 import { StoreIcon, TruckIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, Spinner } from "../components/ui.tsx"
 import { formatDate, formatTotal } from "../format.ts"
-import { cartAtom, deliveryAtom, lastOrderAtom, placeOrderAtom, quoteAtom } from "../state.ts"
+import { authAtom, useAuthActions } from "../auth.tsx"
+import { cartAtom, deliveryAtom, lastOrderAtom, placeMemberOrderAtom, placeOrderAtom, quoteAtom } from "../state.ts"
 import { QuoteLines, SummaryTotals } from "./Cart.tsx"
 
 type FieldName = "fullName" | "email" | "phone" | "line1" | "line2" | "city" | "postalCode" | "country"
@@ -62,7 +63,10 @@ export function CheckoutPage() {
   const lines = useAtomValue(cartAtom)
   const [delivery, setDelivery] = useAtom(deliveryAtom)
   const quote = useAtomValue(quoteAtom)
-  const placeOrder = useAtomSet(placeOrderAtom, { mode: "promiseExit" })
+  const auth = useAtomValue(authAtom)
+  const { signIn } = useAuthActions()
+  const placeGuestOrder = useAtomSet(placeOrderAtom, { mode: "promiseExit" })
+  const placeMemberOrder = useAtomSet(placeMemberOrderAtom, { mode: "promiseExit" })
   const setLastOrder = useAtomSet(lastOrderAtom)
   const setCart = useAtomSet(cartAtom)
   const navigate = useNavigate()
@@ -72,6 +76,17 @@ export function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | undefined>()
   const errors = validate(form)
+
+  // Members: fill in name and email from their Auth0 profile.
+  useEffect(() => {
+    const user = auth.user
+    if (!user) return
+    setForm((current) => ({
+      ...current,
+      fullName: current.fullName || (user.name.includes("@") ? "" : user.name),
+      email: current.email || (user.email ?? "")
+    }))
+  }, [auth.user])
 
   if (lines.length === 0) {
     return (
@@ -122,7 +137,7 @@ export function CheckoutPage() {
     })
 
     setSubmitting(true)
-    const exit = await placeOrder({ payload })
+    const exit = auth.isAuthenticated ? await placeMemberOrder({ payload }) : await placeGuestOrder({ payload })
     setSubmitting(false)
 
     if (Exit.isSuccess(exit)) {
@@ -138,6 +153,10 @@ export function CheckoutPage() {
           ? `Sorry, ${error.name} just sold out. Please remove it from your bag.`
           : `Sorry, only ${error.available} of ${error.name} are left. Please update your bag.`
       )
+    } else if (error?._tag === "Unauthorized") {
+      setServerError("Your session has expired. Please sign in again to place your order as a member.")
+    } else if (error?._tag === "Forbidden") {
+      setServerError("Your account isn't allowed to place orders.")
     } else if (error?._tag === "InvalidSize") {
       setServerError(`Size ${error.size} of ${error.name} is no longer available. Please choose another size in your bag.`)
     } else {
@@ -153,10 +172,18 @@ export function CheckoutPage() {
       <h1 className="page-title checkout-title">Checkout</h1>
       <div className="checkout-layout">
         <form className="checkout-form" onSubmit={submit} noValidate>
-          <div className="member-prompt">
-            <span>Have an account? Sign in for faster checkout.</span>
-            <Link to="/account?from=checkout" className="text-link">Sign In</Link>
-          </div>
+          {auth.isAuthenticated && auth.user ? (
+            <div className="member-note">
+              <span>
+                Signed in as <strong>{auth.user.email ?? auth.user.name}</strong>. Member pricing: free standard delivery.
+              </span>
+            </div>
+          ) : (
+            <div className="member-prompt">
+              <span>Members get free standard delivery. Sign in for faster checkout.</span>
+              <button type="button" className="text-link link-button" onClick={() => signIn("/checkout")}>Sign In</button>
+            </div>
+          )}
 
           <section>
             <h2>Delivery Options</h2>
@@ -174,7 +201,11 @@ export function CheckoutPage() {
                   <label key={method} className={`speed ${delivery === method ? "is-active" : ""}`}>
                     <input type="radio" name="speed" checked={delivery === method} onChange={() => setDelivery(method)} />
                     <span>
-                      <strong>{deliveryFee(method, subtotal) === 0 ? "Free" : formatTotal(deliveryFee(method, subtotal))}</strong>
+                      <strong>
+                        {deliveryFee(method, subtotal, auth.isAuthenticated) === 0
+                          ? "Free"
+                          : formatTotal(deliveryFee(method, subtotal, auth.isAuthenticated))}
+                      </strong>
                       <span>{method === "standard" ? "Standard" : "Express"} · Arrives by {arrivalDate(deliveryDays(method))}</span>
                     </span>
                   </label>

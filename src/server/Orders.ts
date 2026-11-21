@@ -25,10 +25,24 @@ import { Catalog } from "./Catalog.ts"
  * Prices bags and places orders. Prices always come from the catalog, never
  * from the client, so a tampered request cannot change what the shopper pays.
  */
+export interface PricingOptions {
+  /** Signed-in members get free standard delivery. */
+  readonly member?: boolean | undefined
+}
+
+export interface PlaceOptions {
+  /** The Auth0 user id (`sub`) of a signed-in member placing the order. */
+  readonly customerId?: string | undefined
+}
+
 export class Orders extends Context.Service<Orders, {
-  quote(request: QuoteRequest): Effect.Effect<Quote, ProductNotFound | InvalidColor | InvalidSize>
-  place(request: PlaceOrderRequest): Effect.Effect<Order, ProductNotFound | InvalidColor | InvalidSize | OutOfStock>
+  quote(request: QuoteRequest, options?: PricingOptions): Effect.Effect<Quote, ProductNotFound | InvalidColor | InvalidSize>
+  place(
+    request: PlaceOrderRequest,
+    options?: PlaceOptions
+  ): Effect.Effect<Order, ProductNotFound | InvalidColor | InvalidSize | OutOfStock>
   get(id: OrderIdType): Effect.Effect<Order, OrderNotFound>
+  listFor(customerId: string): Effect.Effect<ReadonlyArray<Order>>
 }>()("kinetik/server/Orders") {
   static readonly layer = Layer.effect(
     Orders,
@@ -52,7 +66,11 @@ export class Orders extends Context.Service<Orders, {
         return [...merged.values()]
       }
 
-      const priceBag = Effect.fn("Orders.priceBag")(function*(lines: ReadonlyArray<CartLine>, delivery: DeliveryMethod) {
+      const priceBag = Effect.fn("Orders.priceBag")(function*(
+        lines: ReadonlyArray<CartLine>,
+        delivery: DeliveryMethod,
+        member: boolean
+      ) {
         const quoteLines = yield* Effect.forEach(mergeLines(lines), (line) =>
           Effect.gen(function*() {
             const product = yield* catalog.get(line.productId)
@@ -79,7 +97,7 @@ export class Orders extends Context.Service<Orders, {
           (sum, line) => sum + Math.max(0, (line.product.previousPrice ?? line.unitPrice) - line.unitPrice) * line.quantity,
           0
         )
-        const fee = deliveryFee(delivery, subtotal)
+        const fee = deliveryFee(delivery, subtotal, member)
         return new Quote({
           lines: quoteLines,
           itemCount: quoteLines.reduce((sum, line) => sum + line.quantity, 0),
@@ -88,11 +106,14 @@ export class Orders extends Context.Service<Orders, {
           delivery,
           deliveryFee: fee,
           freeDeliveryThreshold: FREE_DELIVERY_THRESHOLD,
-          total: subtotal + fee
+          total: subtotal + fee,
+          member
         })
       })
 
-      const quote = Effect.fn("Orders.quote")((request: QuoteRequest) => priceBag(request.lines, request.delivery))
+      const quote = Effect.fn("Orders.quote")((request: QuoteRequest, options?: PricingOptions) =>
+        priceBag(request.lines, request.delivery, options?.member ?? false)
+      )
 
       const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
       const makeOrderId = Effect.gen(function*() {
@@ -103,8 +124,9 @@ export class Orders extends Context.Service<Orders, {
         return OrderId.make(`KT-${suffix}`)
       })
 
-      const place = Effect.fn("Orders.place")(function*(request: PlaceOrderRequest) {
-        const priced = yield* priceBag(request.lines, request.delivery)
+      const place = Effect.fn("Orders.place")(function*(request: PlaceOrderRequest, options?: PlaceOptions) {
+        const customerId = options?.customerId
+        const priced = yield* priceBag(request.lines, request.delivery, customerId !== undefined)
         // Reserve stock per product (sizes share one stock level in this demo).
         const perProduct = new Map<string, number>()
         for (const line of priced.lines) {
@@ -118,6 +140,7 @@ export class Orders extends Context.Service<Orders, {
         const eta = DateTime.add(now, { days: deliveryDays(request.delivery) })
         const order = new Order({
           id: yield* makeOrderId,
+          ...(customerId ? { customerId } : {}),
           status: "confirmed",
           placedAt: DateTime.formatIso(now),
           estimatedDelivery: DateTime.formatIso(eta),
@@ -126,7 +149,12 @@ export class Orders extends Context.Service<Orders, {
           quote: priced
         })
         yield* Ref.update(orders, (map) => new Map(map).set(order.id, order))
-        yield* Effect.logInfo("Order placed", { orderId: order.id, total: priced.total, items: priced.itemCount })
+        yield* Effect.logInfo("Order placed", {
+          orderId: order.id,
+          total: priced.total,
+          items: priced.itemCount,
+          member: customerId !== undefined
+        })
         return order
       })
 
@@ -138,7 +166,14 @@ export class Orders extends Context.Service<Orders, {
         return order
       })
 
-      return Orders.of({ quote, place, get })
+      const listFor = Effect.fn("Orders.listFor")(function*(customerId: string) {
+        const all = yield* Ref.get(orders)
+        return [...all.values()]
+          .filter((order) => order.customerId === customerId)
+          .toSorted((a, b) => b.placedAt.localeCompare(a.placedAt))
+      })
+
+      return Orders.of({ quote, place, get, listFor })
     })
   )
 }

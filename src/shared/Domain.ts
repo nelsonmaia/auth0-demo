@@ -147,7 +147,8 @@ export class Quote extends Schema.Class<Quote>("Quote")({
   delivery: DeliveryMethod,
   deliveryFee: Cents,
   freeDeliveryThreshold: Cents,
-  total: Cents
+  total: Cents,
+  member: Schema.Boolean
 }) {}
 
 const NonBlank = Schema.Trimmed.pipe(Schema.check(Schema.isMinLength(1, { message: "Required" })))
@@ -181,6 +182,7 @@ export const OrderStatus = Schema.Literals(["confirmed", "packing", "shipped", "
 
 export class Order extends Schema.Class<Order>("Order")({
   id: OrderId,
+  customerId: Schema.optionalKey(Schema.String),
   status: OrderStatus,
   placedAt: Schema.String,
   estimatedDelivery: Schema.String,

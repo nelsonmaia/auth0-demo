@@ -1,6 +1,8 @@
 import { Effect, Layer } from "effect"
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api"
 import { StoreApi } from "../shared/Api.ts"
+import { CurrentMember, Forbidden, Scopes } from "../shared/Auth.ts"
+import { AuthConfig, AuthorizationLive, TokenVerifier } from "./Auth.ts"
 import { Catalog } from "./Catalog.ts"
 import { Orders } from "./Orders.ts"
 
@@ -40,12 +42,48 @@ const CheckoutHandlers = HttpApiBuilder.group(
   })
 )
 
+const AccountHandlers = HttpApiBuilder.group(
+  StoreApi,
+  "account",
+  Effect.fn(function*(handlers) {
+    const orders = yield* Orders
+
+    // The Authorization middleware has already verified the token; here we
+    // check the scope each operation needs.
+    const requireScope = (scope: string) =>
+      Effect.gen(function*() {
+        const member = yield* CurrentMember
+        if (!member.scopes.includes(scope)) {
+          return yield* new Forbidden({ message: `This action needs the ${scope} permission.`, requiredScope: scope })
+        }
+        return member
+      })
+
+    return handlers.handleAll({
+      me: () => CurrentMember,
+      quote: ({ payload }) => orders.quote(payload, { member: true }),
+      placeOrder: ({ payload }) =>
+        requireScope(Scopes.createOrders).pipe(
+          Effect.flatMap((member) => orders.place(payload, { customerId: member.sub }))
+        ),
+      orders: () => requireScope(Scopes.readOrders).pipe(Effect.flatMap((member) => orders.listFor(member.sub)))
+    })
+  })
+)
+
 /** Domain services shared by every handler (a single Catalog instance). */
 export const ServicesLive = Orders.layer.pipe(Layer.provideMerge(Catalog.layer))
 
-/** All endpoint handlers with their services, ready to serve or test. */
-export const HandlersLive = Layer.mergeAll(SystemHandlers, CatalogHandlers, CheckoutHandlers).pipe(
-  Layer.provide(ServicesLive)
+/** All endpoint handlers with the domain services, but no token verifier. */
+export const HandlersNoAuth = Layer.mergeAll(SystemHandlers, CatalogHandlers, CheckoutHandlers, AccountHandlers).pipe(
+  Layer.provide(ServicesLive),
+  Layer.provideMerge(AuthorizationLive)
+)
+
+/** All endpoint handlers, verifying Auth0 access tokens. */
+export const HandlersLive = HandlersNoAuth.pipe(
+  Layer.provide(TokenVerifier.layer),
+  Layer.provide(AuthConfig.layer)
 )
 
 /** Every HTTP route of the API, plus OpenAPI JSON and interactive docs at /api/docs. */

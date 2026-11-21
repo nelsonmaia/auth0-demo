@@ -14,14 +14,15 @@ export const deliveryOptions: ReadonlyArray<{
   { id: "pickup", label: "Pick Up", description: "Free pick-up at a partner store in 2–3 days", days: 3 }
 ]
 
-export const deliveryFee = (method: DeliveryMethod, subtotal: number): number => {
+/** Members (signed in with Auth0) always get free standard delivery. */
+export const deliveryFee = (method: DeliveryMethod, subtotal: number, member = false): number => {
   switch (method) {
     case "pickup":
       return 0
     case "express":
       return 2_000
     case "standard":
-      return subtotal === 0 || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : 800
+      return member || subtotal === 0 || subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : 800
   }
 }
 
