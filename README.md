@@ -5,6 +5,8 @@ accessories for running, training, basketball, trail and lifestyle, with
 colourways, sizes, filters, a bag and checkout. It is built end to end with
 [Effect](https://effect.website) and is ready for Auth0 to be added next.
 
+**Live demo:** <https://kinetik-store-zeta.vercel.app> (works on phones too)
+
 > KINETIK is a fictional brand. Product names are invented and every product
 > image is a vector illustration drawn in code, so there are no photos,
 > logos or third-party assets to license.
@@ -94,10 +96,10 @@ function at `/api/*`.
    **Deploy**.
 4. Open the `https://<project>.vercel.app` URL on your phone.
 
-Vercel deploys the **production branch** (usually `main`) to the public URL.
-Other branches get preview URLs, which by default require you to be logged in
-to Vercel. Merge into `main`, or change the production branch under
-*Project → Settings → Git*.
+The live demo is the Vercel project `kinetik-store`, linked to this repo.
+Its production branch is `main`: pushing to `main` updates
+<https://kinetik-store-zeta.vercel.app> automatically. Pushes to other branches
+create preview URLs, which by default require you to be logged in to Vercel.
 
 ### Render (alternative)
 
