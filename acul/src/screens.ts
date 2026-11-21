@@ -32,12 +32,14 @@ function googleConnection(conns: ReadonlyArray<Connection> | null | undefined): 
 }
 
 /**
- * Reads one Experiment Center flag parameter. Entries arrive as `{ value }`
- * objects, so always unwrap `.value`. Returns undefined when no experiment.
+ * Reads one Experiment Center flag parameter. The docs describe `{ value }`
+ * entries, but the live tenant sends plain values (`passkey_first: true`),
+ * so accept both. Returns undefined when there is no experiment.
  */
 function flag(experiment: { config: Record<string, unknown> } | null | undefined, key: string): unknown {
-  const entry = experiment?.config?.[key] as { value?: unknown } | undefined
-  return entry?.value
+  const entry = experiment?.config?.[key]
+  if (entry !== null && typeof entry === "object" && "value" in entry) return (entry as { value: unknown }).value
+  return entry
 }
 
 function raw(data: FormData, key: string): string {

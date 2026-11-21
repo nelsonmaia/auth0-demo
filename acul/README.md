@@ -68,11 +68,11 @@ real flow from the live store (stops at a wrong-password error; creates no users
 
 The email screen (`login-id`) has `context_configuration: ["experiment"]`, so
 the ACUL SDK exposes `experiment` on it. `flag()` in `src/screens.ts` reads a
-flag parameter (always unwrap `.value`).
+flag parameter. The docs show `{ value }` entries, but the live tenant sends plain values (`passkey_first: true`), so `flag()` accepts both.
 
 | Experiment | Flag | Cohorts | Status |
 | --- | --- | --- | --- |
-| `exp_wiUXgJC3b5ayCcs2JRMbu9` KINETIK passkey first | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | 50/50 random, sticky per user and device | draft |
+| `exp_sdxjEf9YL9KkeS2C3v5gSA` KINETIK passkey first (by device) | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | Segment "KINETIK on phones" (`seg_g45cttUh7tfpAbU1ivKoTY`, client + `device_type: mobile`) gets B; everyone else falls back to A | **active** since 2026-11-21 |
 | KINETIK passkey prompt timing (Exp 1) | `flg_a0_managed_passkey_enrollment` (Auth0-managed) | see HANDOVER.md | not created |
 
 Segment `seg_tZouhVqdez8ThL2MagzQg2` ("KINETIK Store app") matches the KINETIK
@@ -83,3 +83,9 @@ While the feature is in beta, only one experiment can be active per tenant.
 
 Force a version for QA by adding `experiment_id` and `variation_id` to the
 `/authorize` request (works in draft).
+
+Other segments: `seg_wnGqDTM5uME1Rkv4KZDXZQ` "KINETIK in the UK" (client + `country: GB`),
+not used yet. The earlier 50/50 draft `exp_wiUXgJC3b5ayCcs2JRMbu9` is archived.
+`node preview/cohort.cjs <out-dir>` signs in as a phone and a desktop and prints
+the version each gets. Forcing a version with `experiment_id`/`variation_id`
+on `/authorize` did not pass the context while the experiment was a draft.
