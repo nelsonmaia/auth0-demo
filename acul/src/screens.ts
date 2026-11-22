@@ -89,9 +89,12 @@ export function loginId(): HTMLElement {
   const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
   const google = googleConnection(sdk.transaction.alternateConnections)
 
+  // Experiment "KINETIK passkeys by country": show_passkeys=false hides every
+  // passkey option (button and autofill). Missing flag = passkeys shown.
+  const passkeys = sdk.transaction.isPasskeyEnabled && flag(sdk.experiment, "show_passkeys") !== false
   // Experiment "KINETIK passkey first": the treatment leads with the passkey
-  // button. Only when passkeys are on; otherwise everyone sees email first.
-  const passkeyFirst = sdk.transaction.isPasskeyEnabled && flag(sdk.experiment, "passkey_first") === true
+  // button. Only when passkeys are shown; otherwise email first.
+  const passkeyFirst = passkeys && flag(sdk.experiment, "passkey_first") === true
 
   const f = form(
     [
@@ -103,7 +106,7 @@ export function loginId(): HTMLElement {
     (data) => sdk.login({ username: str(data, "username"), captcha: cap.value() }),
   )
 
-  if (sdk.transaction.showPasskeyAutofill) sdk.registerPasskeyAutofill("k-username").catch(() => {})
+  if (passkeys && sdk.transaction.showPasskeyAutofill) sdk.registerPasskeyAutofill("k-username").catch(() => {})
 
   if (passkeyFirst) {
     const passkey = h("button", { type: "button", class: "k-btn k-btn-primary k-passkey-first" }, "Sign in with a Passkey")
@@ -132,9 +135,9 @@ export function loginId(): HTMLElement {
     {},
     ...title("Enter your email to join us or sign in."),
     f,
-    google || sdk.transaction.isPasskeyEnabled ? divider() : null,
+    google || passkeys ? divider() : null,
     google ? googleButton(() => sdk.federatedLogin({ connection: google.name })) : null,
-    sdk.transaction.isPasskeyEnabled
+    passkeys
       ? h(
           "button",
           { type: "button", class: "k-btn k-btn-outline", onclick: () => sdk.passkeyLogin() },

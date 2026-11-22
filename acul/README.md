@@ -72,7 +72,8 @@ flag parameter. The docs show `{ value }` entries, but the live tenant sends pla
 
 | Experiment | Flag | Cohorts | Status |
 | --- | --- | --- | --- |
-| `exp_sdxjEf9YL9KkeS2C3v5gSA` KINETIK passkey first (by device) | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | Segment "KINETIK on phones" (`seg_g45cttUh7tfpAbU1ivKoTY`, client + `device_type: mobile`) gets B; everyone else falls back to A | **active** since 2026-11-21 |
+| `exp_sdxjEf9YL9KkeS2C3v5gSA` KINETIK passkey first (by device) | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | Segment "KINETIK on phones" (`seg_g45cttUh7tfpAbU1ivKoTY`, client + `device_type: mobile`) gets B; everyone else falls back to A | completed 2026-11-22 |
+| `exp_gsPF1J4G1zXMsw3wAEBFgb` KINETIK passkeys by country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK in the UK" (`seg_wnGqDTM5uME1Rkv4KZDXZQ`, client + `country: GB`) gets "With passkeys" (control); everyone else falls back to "Without passkeys" | **active** since 2026-11-22 |
 | KINETIK passkey prompt timing (Exp 1) | `flg_a0_managed_passkey_enrollment` (Auth0-managed) | see HANDOVER.md | not created |
 
 Segment `seg_tZouhVqdez8ThL2MagzQg2` ("KINETIK Store app") matches the KINETIK
@@ -85,7 +86,7 @@ Force a version for QA by adding `experiment_id` and `variation_id` to the
 `/authorize` request (works in draft).
 
 Other segments: `seg_wnGqDTM5uME1Rkv4KZDXZQ` "KINETIK in the UK" (client + `country: GB`),
-not used yet. The earlier 50/50 draft `exp_wiUXgJC3b5ayCcs2JRMbu9` is archived.
+used by the country experiment. The earlier 50/50 draft `exp_wiUXgJC3b5ayCcs2JRMbu9` is archived.
 `node preview/cohort.cjs <out-dir>` signs in as a phone and a desktop and prints
 the version each gets. Forcing a version with `experiment_id`/`variation_id`
 on `/authorize` did not pass the context while the experiment was a draft.
