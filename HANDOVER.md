@@ -242,6 +242,24 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
 - Choice/dropdown answers are read as a value or a one-item list.
 - The Auth0 passkey enrollment prompt can still appear after the form.
 
+### Email pre-fill (login_hint)
+
+- The store remembers an email the shopper gave (footer "Get KINETIK news" or
+  guest checkout) in `localStorage` (`kinetik.email.v1`,
+  `src/client/knownEmail.ts`) and sends it as `login_hint` on Sign In and Join.
+  News sign-up also sets `newsletter: "yes"` on the guest session; the
+  post-login Action (version 3) then sets `kinetik_profile.marketing_opt_in`.
+- ACUL: `login-id` and `signup-id` have
+  `untrusted_data.authorization_params.login_hint` in `context_configuration`
+  and fill the email field from it (a retry keeps what was typed).
+- With a hint, Auth0's identifier-first login skips the email screen and opens
+  "What's your password?" with the email shown; "Edit" goes back to the email
+  screen, pre-filled. Join opens with the email filled in. Verified live
+  2026-11-23 at phone size.
+- `kinetik-login` on Vercel now builds from this repo (root directory `acul`)
+  through the MCP `create_deployment` gitSource; it still has no automatic Git
+  deploys.
+
 ### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their

@@ -41,7 +41,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -52,14 +52,15 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
         }
       ],
       "context_configuration": [
-        "experiment"
+        "experiment",
+        "untrusted_data.authorization_params.login_hint"
       ]
     },
     {
@@ -103,7 +104,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -114,7 +115,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -162,7 +163,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -173,11 +174,14 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
         }
+      ],
+      "context_configuration": [
+        "untrusted_data.authorization_params.login_hint"
       ]
     },
     {
@@ -221,7 +225,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -232,7 +236,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -280,7 +284,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -291,7 +295,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -339,7 +343,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -350,7 +354,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -398,7 +402,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -409,7 +413,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -457,7 +461,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -468,7 +472,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -516,7 +520,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -527,7 +531,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
@@ -575,7 +579,7 @@
             "rel": "stylesheet",
             "href": "https://kinetik-login.vercel.app/kinetik-login.css",
             "integrity": [
-              "sha384-MAgiRAqoqa62NnejxeOcyTC2PDaLJONEXAZau4jzfi+UmBDhexlKhHwL0pjpIGsj"
+              "sha384-sxeVWF7bKIeVo3k+GT4OxgLSTq7VceaddKITOzftESuh+dL/1pSUPeZTE+Fgv00/"
             ],
             "crossorigin": "anonymous"
           }
@@ -586,7 +590,7 @@
             "src": "https://kinetik-login.vercel.app/kinetik-login.js",
             "type": "module",
             "integrity": [
-              "sha384-cKh7OPmNjKDQJoT1dpDn2OyLWfVhZZezNu7ob02SisEuljNnAApeo8T3qRSYP888"
+              "sha384-s77r18miwMd96T/te2w5SNReuJahJB25rjosFE1jHd6fLl0uGuhswpYg4NIQucNV"
             ],
             "crossorigin": "anonymous"
           }
