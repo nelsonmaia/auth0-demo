@@ -221,6 +221,27 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
 - Verified live at phone size: store → Sign In → KINETIK email screen →
   password screen → error state → Join screen.
 
+### Member profile form (Auth0 Forms)
+
+- **Form** `ap_4rqPmJZfhyFD1jEafh5CWF` "KINETIK member profile" (source:
+  `auth0/forms/kinetik-member-profile.json`). Router on `{{vars.ask_contact}}`:
+  `"no"` skips step "About you" (first name, last name, phone) and goes to
+  "Your game" (favourite sport, UK shoe size, news opt-in), then resumes login.
+- **Data path:** guest checkout saves `full_name`, `phone`, `city`,
+  `postal_code`, `country`, `last_order_id` on the anonymous session
+  (`src/client/pages/Checkout.tsx`). The post-login Action
+  `auth0/actions/kinetik-guest-session-transfer.js` (deployed as version 2)
+  copies them into `user_metadata.kinetik_profile` without overwriting, then
+  renders the form only while `favourite_sport` is missing (never on refresh
+  token renewals). `onContinuePostLogin` saves the answers. No Flow is used.
+- **Verified live 2026-11-23** (phone viewport, test users created through the
+  Management API and deleted afterwards): guest order then Sign In opens the form
+  at "Your game" with name/phone/address already saved; Sign In without an
+  order opens at "About you". Sign-up itself could not be automated: the tenant
+  sends an email code on Join (`/u/email-identifier/challenge`).
+- Choice/dropdown answers are read as a value or a one-item list.
+- The Auth0 passkey enrollment prompt can still appear after the form.
+
 ### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their
