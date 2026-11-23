@@ -38,6 +38,29 @@ export const favouritesAtom = Atom.kvs({
   defaultValue: () => []
 }).pipe(Atom.keepAlive)
 
+/**
+ * The shopping country picked in the footer ("auto" = use the visitor's
+ * location). Sent to the guest's Auth0 anonymous session as `shop_country`,
+ * where Experiment Center segments can match on it.
+ */
+export const SHOP_COUNTRIES = [
+  ["auto", "Automatic (your location)"],
+  ["GB", "United Kingdom"],
+  ["US", "United States"],
+  ["IE", "Ireland"],
+  ["FR", "France"],
+  ["DE", "Germany"],
+  ["ES", "Spain"],
+  ["PT", "Portugal"]
+] as const
+
+export const shopCountryAtom = Atom.kvs({
+  runtime: storage,
+  key: "kinetik.country.v1",
+  schema: Schema.Literals(["auto", "GB", "US", "IE", "FR", "DE", "ES", "PT"]),
+  defaultValue: () => "auto" as const
+}).pipe(Atom.keepAlive)
+
 export const cartCountAtom = Atom.make((get) => get(cartAtom).reduce((sum, line) => sum + line.quantity, 0))
 
 const same = (a: Pick<StoredLine, "productId" | "colorId" | "size">, b: Pick<StoredLine, "productId" | "colorId" | "size">) =>

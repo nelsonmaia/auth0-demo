@@ -2810,3 +2810,40 @@ h4 {
   gap: 8px;
   align-items: flex-start;
 }
+
+/* Footer country picker (feeds the guest session's shop_country) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.country-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+}
+
+.country-picker select {
+  appearance: none;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  padding: 4px 18px 4px 0;
+  cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 6px center, right 2px center;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+}
+
+.country-picker select option {
+  color: #111;
+}

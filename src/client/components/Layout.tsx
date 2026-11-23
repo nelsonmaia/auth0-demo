@@ -3,9 +3,9 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Link, Outlet, ScrollRestoration, useLocation, useNavigate } from "react-router"
 import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
-import { authAtom, useAuthActions } from "../auth.tsx"
+import { authAtom, guestSessions, useAuthActions } from "../auth.tsx"
 import { formatMoney } from "../format.ts"
-import { cartCountAtom, favouritesAtom, productsAtom, toastAtom } from "../state.ts"
+import { SHOP_COUNTRIES, cartCountAtom, favouritesAtom, productsAtom, shopCountryAtom, toastAtom } from "../state.ts"
 import { BagIcon, CheckIcon, ChevronRight, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "./Icons.tsx"
 import { AsyncView, Price } from "./ui.tsx"
 
@@ -455,6 +455,34 @@ function AddedToBag() {
   )
 }
 
+/**
+ * Shopping country. Saved locally and, for guests, pushed straight to the
+ * Auth0 anonymous session (`shop_country`), so the next sign-in can be placed
+ * in an Experiment Center segment by it (e.g. passkeys for UK shoppers only).
+ */
+function CountryPicker() {
+  const [country, setCountry] = useAtom(shopCountryAtom)
+  const auth = useAtomValue(authAtom)
+  return (
+    <label className="country-picker">
+      <span aria-hidden="true">🌐</span>
+      <span className="sr-only">Shopping country</span>
+      <select
+        value={country}
+        onChange={(e) => {
+          const next = e.target.value as typeof country
+          setCountry(next)
+          if (!auth.isAuthenticated) guestSessions.setMetadata({ shop_country: next }).catch(() => undefined)
+        }}
+      >
+        {SHOP_COUNTRIES.map(([code, name]) => (
+          <option key={code} value={code}>{name}</option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 function Footer() {
   return (
     <footer className="site-footer">
@@ -480,7 +508,7 @@ function Footer() {
           <Link to="/credits">Photo Credits</Link>
         </div>
         <div className="footer-locale">
-          <span>🌐 United States</span>
+          <CountryPicker />
         </div>
       </div>
       <div className="container footer-bottom">
