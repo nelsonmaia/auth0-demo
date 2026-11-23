@@ -8,7 +8,7 @@ import { deliveryDays, deliveryFee } from "../../shared/Pricing.ts"
 import { StoreIcon, TruckIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, Spinner } from "../components/ui.tsx"
 import { formatDate, formatTotal } from "../format.ts"
-import { authAtom, guestAtom, useAuthActions } from "../auth.tsx"
+import { authAtom, guestAtom, guestSessions, useAuthActions } from "../auth.tsx"
 import { cartAtom, deliveryAtom, lastOrderAtom, placeMemberOrderAtom, placeOrderAtom, quoteAtom } from "../state.ts"
 import { QuoteLines, SummaryTotals } from "./Cart.tsx"
 
@@ -148,6 +148,20 @@ export function CheckoutPage() {
     setSubmitting(false)
 
     if (Exit.isSuccess(exit)) {
+      // Guests: keep the checkout details on the Auth0 anonymous session, so a
+      // later sign-up can fill the member profile without asking again
+      // (Action "KINETIK Store - guest session transfer" + form "KINETIK member profile").
+      if (!auth.isAuthenticated && guest) {
+        const details: Record<string, string> = {
+          full_name: v.fullName,
+          city: v.city,
+          postal_code: v.postalCode,
+          country: v.country,
+          last_order_id: exit.value.id
+        }
+        if (v.phone) details.phone = v.phone
+        guestSessions.setMetadata(details).catch(() => undefined)
+      }
       setLastOrder(exit.value)
       setCart([])
       navigate(`/order/${exit.value.id}`, { replace: true })

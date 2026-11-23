@@ -1,0 +1,59 @@
+{
+  "name": "KINETIK member profile",
+  "languages": { "primary": "en" },
+  "start": { "next_node": "router_contact", "coordinates": { "x": 0, "y": 0 } },
+  "nodes": [
+    {
+      "id": "router_contact",
+      "type": "ROUTER",
+      "alias": "Contact already known?",
+      "coordinates": { "x": 250, "y": 0 },
+      "config": {
+        "rules": [
+          {
+            "id": "rule_contact_known",
+            "alias": "Known from guest order",
+            "condition": { "operator": "AND", "operands": [ { "operator": "EQ", "operands": ["{{vars.ask_contact}}", "no"] } ] },
+            "next_node": "step_game"
+          }
+        ],
+        "fallback": "step_about"
+      }
+    },
+    {
+      "id": "step_about",
+      "type": "STEP",
+      "alias": "About you",
+      "coordinates": { "x": 550, "y": -150 },
+      "config": {
+        "components": [
+          { "id": "intro_about", "category": "BLOCK", "type": "RICH_TEXT", "config": { "content": "<h2>Welcome to KINETIK</h2><p>Tell us a little about you so we can make checkout faster.</p>" } },
+          { "id": "first_name", "category": "FIELD", "type": "TEXT", "label": "First name", "required": true, "sensitive": false, "config": { "multiline": false } },
+          { "id": "last_name", "category": "FIELD", "type": "TEXT", "label": "Last name", "required": true, "sensitive": false, "config": { "multiline": false } },
+          { "id": "phone", "category": "FIELD", "type": "TEL", "label": "Phone (optional)", "required": false, "sensitive": false, "config": { "country_picker": true } },
+          { "id": "next_about", "category": "BLOCK", "type": "NEXT_BUTTON", "config": { "text": "Continue" } }
+        ],
+        "next_node": "step_game"
+      }
+    },
+    {
+      "id": "step_game",
+      "type": "STEP",
+      "alias": "Your game",
+      "coordinates": { "x": 900, "y": 0 },
+      "config": {
+        "components": [
+          { "id": "intro_game", "category": "BLOCK", "type": "RICH_TEXT", "config": { "content": "<h2>What's your game?</h2><p>We'll tailor new arrivals and member offers to you.</p>" } },
+          { "id": "favourite_sport", "category": "FIELD", "type": "CHOICE", "label": "Favourite sport", "required": true, "sensitive": false, "config": { "multiple": false, "options": [
+            { "label": "Running", "value": "running" }, { "label": "Training", "value": "training" }, { "label": "Basketball", "value": "basketball" }, { "label": "Trail", "value": "trail" }, { "label": "Lifestyle", "value": "lifestyle" } ] } },
+          { "id": "shoe_size", "category": "FIELD", "type": "DROPDOWN", "label": "Shoe size (UK)", "required": false, "sensitive": false, "config": { "multiple": false, "options": [
+            { "label": "UK 3", "value": "3" }, { "label": "UK 4", "value": "4" }, { "label": "UK 5", "value": "5" }, { "label": "UK 6", "value": "6" }, { "label": "UK 7", "value": "7" }, { "label": "UK 8", "value": "8" }, { "label": "UK 9", "value": "9" }, { "label": "UK 10", "value": "10" }, { "label": "UK 11", "value": "11" }, { "label": "UK 12", "value": "12" }, { "label": "UK 13", "value": "13" } ] } },
+          { "id": "marketing_opt_in", "category": "FIELD", "type": "LEGAL", "required": false, "sensitive": false, "config": { "text": "<p>Send me KINETIK member news and offers</p>" } },
+          { "id": "next_game", "category": "BLOCK", "type": "NEXT_BUTTON", "config": { "text": "Finish" } }
+        ],
+        "next_node": "$ending"
+      }
+    }
+  ],
+  "ending": { "resume_flow": true, "coordinates": { "x": 1250, "y": 0 } }
+}
