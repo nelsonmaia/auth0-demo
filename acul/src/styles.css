@@ -472,3 +472,10 @@ body.kinetik {
 .k-form + .k-stack {
   margin-top: 12px;
 }
+
+/* Note under a pre-filled email (login_hint) */
+.k-hint-left {
+  margin-top: -8px !important;
+  font-size: 13px;
+  color: var(--muted);
+}

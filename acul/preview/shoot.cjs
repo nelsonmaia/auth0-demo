@@ -46,6 +46,8 @@ const cases = {
     c.experiment = { experiment_id: "exp_mock", variation_id: "var_mock", variation_name: "Passkey first", is_control: false, config: { passkey_first: { value: true } } }
     return c
   })(),
+  "hint-login-id": base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
+  "hint-signup-id": base("signup-id", { screen: { links: { login: "#login" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
   "exp-no-passkeys": (() => {
     const c = base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } } })
     c.transaction.connection.options.authentication_methods.passkey.enabled = true

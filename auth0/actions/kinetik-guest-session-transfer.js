@@ -47,7 +47,12 @@ function mergeGuestDetails(profile, metadata) {
     };
     changed = true;
   }
-  if (changed) next.prefilled_from = "guest_checkout";
+  if (metadata.newsletter === "yes" && next.marketing_opt_in !== true) {
+    next.marketing_opt_in = true;
+    next.marketing_source = "store_news_signup";
+    changed = true;
+  }
+  if (changed && fullName) next.prefilled_from = "guest_checkout";
   return { profile: next, changed };
 }
 
@@ -115,7 +120,8 @@ exports.onContinuePostLogin = async (event, api) => {
   if (clean(fields.phone, 40)) profile.phone = clean(fields.phone, 40);
   if (SPORTS.includes(single(fields.favourite_sport))) profile.favourite_sport = single(fields.favourite_sport);
   if (clean(String(single(fields.shoe_size) ?? ""), 4)) profile.shoe_size_uk = clean(String(single(fields.shoe_size)), 4);
-  profile.marketing_opt_in = fields.marketing_opt_in === true || fields.marketing_opt_in === "true";
+  // Keep an opt-in given earlier (store news sign-up); the box can add one.
+  profile.marketing_opt_in = profile.marketing_opt_in === true || fields.marketing_opt_in === true || fields.marketing_opt_in === "true";
   profile.completed_at = new Date().toISOString();
 
   api.user.setUserMetadata("kinetik_profile", profile);

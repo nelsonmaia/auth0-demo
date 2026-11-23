@@ -76,7 +76,11 @@ export function loginId(): HTMLElement {
   const allowed = sdk.getLoginIdentifiers() ?? ["email"]
   const emailOnly = allowed.length === 1 && allowed[0] === "email"
   const label = emailOnly ? "Email" : allowed.includes("email") ? "Email or username" : "Username"
-  const prefill = sdk.untrustedData.submittedFormData?.username as string | undefined
+  // A retry keeps what was typed; otherwise use the email the store passed as
+  // login_hint (news sign-up or guest checkout).
+  const hint = sdk.untrustedData.authorizationParams?.login_hint
+  const submittedAgain = sdk.untrustedData.submittedFormData?.username !== undefined
+  const prefill = (sdk.untrustedData.submittedFormData?.username as string | undefined) ?? hint
 
   const id = field({
     name: "username",
@@ -100,6 +104,7 @@ export function loginId(): HTMLElement {
     [
       errorBanner(errors, ["username", "captcha"]),
       id.el,
+      hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null,
       cap.el,
       passkeyFirst ? h("button", { type: "submit", class: "k-btn k-btn-outline" }, "Continue with Email") : primaryButton("Continue"),
     ],
@@ -195,7 +200,9 @@ export function loginPassword(): HTMLElement {
 export function signupId(): HTMLElement {
   const sdk = new SignupId()
   const errors = sdk.getErrors()
-  const prefill = sdk.untrustedData.submittedFormData?.email as string | undefined
+  const hint = sdk.untrustedData.authorizationParams?.login_hint
+  const submittedAgain = sdk.untrustedData.submittedFormData?.email !== undefined
+  const prefill = (sdk.untrustedData.submittedFormData?.email as string | undefined) ?? hint
   const email = field({
     name: "email",
     label: "Email",
@@ -212,7 +219,7 @@ export function signupId(): HTMLElement {
     {},
     ...title("Become a KINETIK Member", "Create your profile to get free standard delivery and member checkout."),
     form(
-      [errorBanner(errors, ["email", "captcha"]), email.el, cap.el, primaryButton("Continue")],
+      [errorBanner(errors, ["email", "captcha"]), email.el, hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null, cap.el, primaryButton("Continue")],
       (data) => sdk.signup({ email: str(data, "email"), captcha: cap.value() }),
     ),
     google ? divider() : null,

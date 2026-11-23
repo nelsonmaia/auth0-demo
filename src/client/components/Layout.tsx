@@ -4,6 +4,7 @@ import { Link, Outlet, ScrollRestoration, useLocation, useNavigate } from "react
 import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
 import { authAtom, guestSessions, useAuthActions } from "../auth.tsx"
+import { knownEmailAtom } from "../knownEmail.ts"
 import { formatMoney } from "../format.ts"
 import { SHOP_COUNTRIES, cartCountAtom, favouritesAtom, productsAtom, shopCountryAtom, toastAtom } from "../state.ts"
 import { BagIcon, CheckIcon, ChevronRight, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "./Icons.tsx"
@@ -483,6 +484,59 @@ function CountryPicker() {
   )
 }
 
+/**
+ * "Get KINETIK news": remembers the email in this browser (pre-filled at Sign
+ * In / Join via login_hint) and flags the guest session as subscribed, which
+ * the post-login Action copies into the member profile.
+ */
+function NewsSignup() {
+  const [knownEmail, setKnownEmail] = useAtom(knownEmailAtom)
+  const auth = useAtomValue(authAtom)
+  const [email, setEmail] = useState(knownEmail)
+  const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | undefined>()
+  const submit = (event: FormEvent) => {
+    event.preventDefault()
+    const value = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setError("Enter a valid email address")
+      return
+    }
+    setError(undefined)
+    setKnownEmail(value)
+    if (!auth.isAuthenticated) guestSessions.setMetadata({ newsletter: "yes" }).catch(() => undefined)
+    setDone(true)
+  }
+  return (
+    <form className="news-signup" onSubmit={submit} noValidate>
+      <h4>Get KINETIK news</h4>
+      {done ? (
+        <p className="news-done" role="status">
+          You're in. We'll fill in <strong>{knownEmail}</strong> for you when you sign in or join.
+        </p>
+      ) : (
+        <>
+          <div className="news-row">
+            <label className="sr-only" htmlFor="news-email">Email</label>
+            <input
+              id="news-email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              aria-invalid={error ? true : undefined}
+            />
+            <button type="submit" className="button button-light">Sign Up</button>
+          </div>
+          {error ? <small className="news-error">{error}</small> : null}
+        </>
+      )}
+    </form>
+  )
+}
+
 function Footer() {
   return (
     <footer className="site-footer">
@@ -507,6 +561,7 @@ function Footer() {
           <span>Sustainability</span>
           <Link to="/credits">Photo Credits</Link>
         </div>
+        <NewsSignup />
         <div className="footer-locale">
           <CountryPicker />
         </div>

@@ -1,5 +1,5 @@
 import { useAuth0 } from "@auth0/auth0-react"
-import { useAtomSet } from "@effect/atom-react"
+import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { Effect } from "effect"
 import { HttpClientRequest } from "effect/http"
 import { HttpApiMiddleware } from "effect/http-api"
@@ -8,6 +8,7 @@ import { useEffect } from "react"
 import { useLocation } from "react-router"
 import { Authorization, Scopes } from "../shared/Auth.ts"
 import { createGuestSessions, type GuestInfo, type TransferMode } from "./anonymous.ts"
+import { knownEmailAtom } from "./knownEmail.ts"
 
 /**
  * Public Auth0 settings (none of these are secrets). Sign-in goes through the
@@ -124,11 +125,18 @@ export function useAuthActions() {
   const location = useLocation()
   const here = location.pathname + location.search
 
+  const knownEmail = useAtomValue(knownEmailAtom)
+
   const login = async (returnTo: string, extra: Record<string, string> = {}) => {
     const ticket = await guestSessions.transferTicket()
     return loginWithRedirect({
       appState: { returnTo },
-      authorizationParams: { ...extra, ...(ticket ? { anon_transfer_token: ticket } : {}) }
+      authorizationParams: {
+        ...extra,
+        // Pre-fills the email on the KINETIK login and join screens.
+        ...(knownEmail ? { login_hint: knownEmail } : {}),
+        ...(ticket ? { anon_transfer_token: ticket } : {})
+      }
     })
   }
 

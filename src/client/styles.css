@@ -2847,3 +2847,50 @@ h4 {
 .country-picker select option {
   color: #111;
 }
+
+/* Footer news sign-up (remembers the email for Sign In / Join) */
+.news-signup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.news-row {
+  display: flex;
+  gap: 8px;
+}
+
+.news-row input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 16px;
+  font-size: 16px;
+  background: var(--bg);
+}
+
+.news-row input:focus {
+  outline: none;
+  border-color: var(--text);
+}
+
+.news-row .button {
+  background: var(--text);
+  color: #fff;
+  min-height: 44px;
+}
+
+.news-row .button:hover {
+  background: var(--muted);
+}
+
+.news-done {
+  color: var(--success);
+}
+
+.news-error {
+  color: var(--danger);
+  font-size: 12px;
+}

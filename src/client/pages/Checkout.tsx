@@ -9,6 +9,7 @@ import { StoreIcon, TruckIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, Spinner } from "../components/ui.tsx"
 import { formatDate, formatTotal } from "../format.ts"
 import { authAtom, guestAtom, guestSessions, useAuthActions } from "../auth.tsx"
+import { knownEmailAtom } from "../knownEmail.ts"
 import { cartAtom, deliveryAtom, lastOrderAtom, placeMemberOrderAtom, placeOrderAtom, quoteAtom } from "../state.ts"
 import { QuoteLines, SummaryTotals } from "./Cart.tsx"
 
@@ -65,6 +66,7 @@ export function CheckoutPage() {
   const quote = useAtomValue(quoteAtom)
   const auth = useAtomValue(authAtom)
   const guest = useAtomValue(guestAtom)
+  const setKnownEmail = useAtomSet(knownEmailAtom)
   const { signIn } = useAuthActions()
   const placeGuestOrder = useAtomSet(placeOrderAtom, { mode: "promiseExit" })
   const placeMemberOrder = useAtomSet(placeMemberOrderAtom, { mode: "promiseExit" })
@@ -148,6 +150,8 @@ export function CheckoutPage() {
     setSubmitting(false)
 
     if (Exit.isSuccess(exit)) {
+      // Remember the email so Sign In / Join start with it filled in.
+      if (!auth.isAuthenticated) setKnownEmail(v.email.toLowerCase())
       // Guests: keep the checkout details on the Auth0 anonymous session, so a
       // later sign-up can fill the member profile without asking again
       // (Action "KINETIK Store - guest session transfer" + form "KINETIK member profile").
