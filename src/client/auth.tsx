@@ -7,7 +7,7 @@ import { Atom } from "effect/reactivity"
 import { useEffect } from "react"
 import { useLocation } from "react-router"
 import { Authorization, Scopes } from "../shared/Auth.ts"
-import { createGuestSessions, type GuestInfo } from "./anonymous.ts"
+import { createGuestSessions, type GuestInfo, type TransferMode } from "./anonymous.ts"
 
 /**
  * Public Auth0 settings (none of these are secrets). Sign-in goes through the
@@ -17,7 +17,9 @@ export const auth0Config = {
   domain: import.meta.env.VITE_AUTH0_DOMAIN ?? "nelson.jp.mmatias.co.uk",
   clientId: import.meta.env.VITE_AUTH0_CLIENT_ID ?? "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7",
   audience: import.meta.env.VITE_AUTH0_AUDIENCE ?? "https://kinetik-store-zeta.vercel.app/api",
-  scope: `openid profile email offline_access ${Scopes.readOrders} ${Scopes.createOrders}`
+  scope: `openid profile email offline_access ${Scopes.readOrders} ${Scopes.createOrders}`,
+  /** How a guest's anonymous session reaches /authorize: "cookie" (auth0_anon) or "ticket". */
+  anonymousTransfer: (import.meta.env.VITE_AUTH0_ANON_TRANSFER === "ticket" ? "ticket" : "cookie") as TransferMode
 } as const
 
 export interface MemberProfile {
@@ -42,7 +44,8 @@ export const guestSessions = createGuestSessions({
   domain: auth0Config.domain,
   clientId: auth0Config.clientId,
   audience: auth0Config.audience,
-  scope: `anon ${Scopes.readOrders} ${Scopes.createOrders}`
+  scope: `anon ${Scopes.readOrders} ${Scopes.createOrders}`,
+  transfer: auth0Config.anonymousTransfer
 })
 
 /** The current guest identity (undefined while signed in or before it starts). */
@@ -112,8 +115,9 @@ export function AuthBridge() {
 
 /**
  * Sign in / join / sign out, returning to where the shopper was. A guest's
- * anonymous session travels with them: a transfer ticket (cookieless, since the
- * store and the Auth0 domain are on different sites) is added to /authorize.
+ * anonymous session travels with them: in cookie mode the browser sends the
+ * auth0_anon cookie to /authorize by itself; in ticket mode a short-lived
+ * transfer ticket is added to the /authorize request.
  */
 export function useAuthActions() {
   const { loginWithRedirect, logout } = useAuth0()

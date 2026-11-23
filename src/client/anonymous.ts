@@ -6,17 +6,28 @@
 // ticket hands the session to Auth0 so a post-login Action can link it to the
 // member (see auth0/actions/kinetik-guest-session-transfer.js).
 //
+// Transfer modes:
+// - "cookie": Auth0 also sets the `auth0_anon` cookie on the Auth0 domain, and
+//   /authorize picks it up automatically at login. Calls send credentials so the
+//   browser keeps that cookie in sync. Browsers that block third-party cookies
+//   (Safari, Chrome with 3PC blocked) won't store it while the store and the
+//   Auth0 domain are different sites.
+// - "ticket": cookieless; a short-lived transfer ticket is added to /authorize.
+//
 // The session token is stateless: every metadata update returns a new one, so
 // we always keep the latest. Requests are serialised so updates never race.
 
 const STORAGE_KEY = "kinetik.guest-session.v1"
 const TRANSFER_AUDIENCE = "urn:auth0:anon_transfer"
 
+export type TransferMode = "cookie" | "ticket"
+
 export interface GuestSessionConfig {
   readonly domain: string
   readonly clientId: string
   readonly audience: string
   readonly scope: string
+  readonly transfer: TransferMode
 }
 
 interface StoredSession {
@@ -92,6 +103,8 @@ export function createGuestSessions(config: GuestSessionConfig) {
     const response = await fetch(`https://${config.domain}/anonymous/token`, {
       method: "POST",
       headers: { "content-type": "application/json" },
+      // In cookie mode, let the browser store/refresh the auth0_anon cookie.
+      credentials: config.transfer === "cookie" ? "include" : "omit",
       body: JSON.stringify({ client_id: config.clientId, ...body })
     })
     if (!response.ok) throw new Error(`Anonymous session request failed (${response.status})`)
@@ -165,9 +178,17 @@ export function createGuestSessions(config: GuestSessionConfig) {
         await issue({ metadata: patch }, merged)
       }),
 
-    /** A single-use ticket (valid ~30 seconds) that hands this session to the next login. */
+    /** How the session is handed to the next login. */
+    transferMode: config.transfer,
+
+    /**
+     * Ticket mode: a single-use ticket (valid ~30 seconds) that hands this
+     * session to the next login. Cookie mode: none needed (waits for pending
+     * metadata updates so the cookie is current).
+     */
     transferTicket: (): Promise<string | undefined> =>
       serialise(async () => {
+        if (config.transfer === "cookie") return undefined
         if (!current?.sessionToken) return undefined
         try {
           const response = await request({ audience: TRANSFER_AUDIENCE, scope: "anon", session_token: current.sessionToken })
@@ -182,6 +203,16 @@ export function createGuestSessions(config: GuestSessionConfig) {
       current = undefined
       save(undefined)
       publish()
+      if (config.transfer === "cookie") {
+        // Session cookies are not flushed on login: end it so a later login
+        // doesn't pick up this (already transferred) guest session again.
+        fetch(`https://${config.domain}/anonymous/logout`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ client_id: config.clientId })
+        }).catch(() => undefined)
+      }
     }
   }
 }

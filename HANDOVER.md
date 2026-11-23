@@ -107,7 +107,7 @@ Anonymous sessions (set up on 2026-11-23, feature flag on for the tenant):
 
 | Setting | Value |
 | --- | --- |
-| Tenant `sessions.anonymous` | `lifetime_in_minutes: 43200`, `activate_cookie: false` (cookieless transfer) |
+| Tenant `sessions.anonymous` | `lifetime_in_minutes: 525600` (365 days, the API maximum), `activate_cookie: true` (since 2026-11-23, cookie transfer mode) |
 | Client | `anonymous_sessions.active: true`; `enforce_anon_session_transfer_network_binding: ip` (default) |
 | API | `subject_type_authorization.anonymous_user: require_client_grant`, `token_lifetime_for_anonymous_access_tokens: 86400` |
 | API claims mapping | `kinetik_bag_items` ← `anonymous_session.metadata.bag_items`, `kinetik_last_viewed` ← `anonymous_session.metadata.last_viewed` |
@@ -128,8 +128,13 @@ What I learned testing `/anonymous/token` (`POST https://<custom domain>/anonymo
   returns `anon_transfer_token`, valid for 30 seconds and bound to the
   requester's IP. Pass it to `/authorize` as `anon_transfer_token` (the SPA SDK
   forwards it via `authorizationParams`).
-- CORS allows the store's origin. There's no server-side invalidation;
-  `/anonymous/logout` only clears the cookie, which is off here.
+- CORS allows the store's origin (with credentials). There's no server-side
+  invalidation; `/anonymous/logout` only clears the `auth0_anon` cookie. The app
+  calls it right after a member signs in, in cookie mode.
+- Cookie: `auth0_anon=ANONYMOUS_SESSION_…; Max-Age=31536000; HttpOnly; Secure;
+  SameSite=None`, host-only on the custom domain. The app sends
+  `credentials: "include"` on `/anonymous/*` in cookie mode (`VITE_AUTH0_ANON_TRANSFER`,
+  default `cookie`; set it to `ticket` for the cookieless mode).
 - After login, the Action sees `event.anonymous_session` (`user_id`, `metadata`, …).
 - Known nit: the bag metadata sync is debounced by 1.5 s, so a change made just
   before clicking Sign In can miss the transferred metadata. Flush it before

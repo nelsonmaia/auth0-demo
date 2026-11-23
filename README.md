@@ -173,18 +173,26 @@ Guests get an Auth0 **anonymous session** without logging in
 - Guests order through the account API under their `anon@…` identity. They pay
   normal guest prices (no member pricing) and can see their guest orders on the
   Account page.
-- On **Sign In / Join Us**, the app fetches a 30-second, IP-bound transfer ticket
-  (`audience: urn:auth0:anon_transfer`) and passes it to `/authorize` as
-  `anon_transfer_token`. This cookieless transfer is used because the store and
-  the Auth0 domain are different sites.
+- On **Sign In / Join Us** the session is handed to Auth0's login in one of two
+  ways (set `VITE_AUTH0_ANON_TRANSFER`):
+  - `cookie` (default): Auth0 sets the `auth0_anon` cookie (365 days,
+    `SameSite=None; Secure; HttpOnly`) on the Auth0 domain during the
+    `/anonymous/token` calls. The app sends credentials so the browser keeps the
+    cookie current, and `/authorize` picks it up by itself. After the transfer
+    the app calls `/anonymous/logout` to end the cookie. Because the store
+    (vercel.app) and the Auth0 domain are different sites, this only works where
+    the browser accepts third-party cookies; see HANDOVER for test results.
+  - `ticket`: a 30-second, IP-bound transfer ticket
+    (`audience: urn:auth0:anon_transfer`) is passed to `/authorize` as
+    `anon_transfer_token`. This works in every browser.
 - The post-login Action `auth0/actions/kinetik-guest-session-transfer.js` (which
   only runs for this app) adds the claim
   `https://kinetik-store-zeta.vercel.app/anonymous_user_id` plus the metadata,
   and saves `kinetik_last_guest_session` to the user's `app_metadata`. On the
   member's next request, the API moves the guest's orders into their account.
 
-Tenant configuration: anonymous session lifetime 43,200 minutes (30 days) with
-the anonymous cookie off; "Allow Anonymous Sessions" on for the app; the API
+Tenant configuration: anonymous session lifetime 525,600 minutes (365 days, the
+maximum Auth0 allows) with the anonymous cookie on; "Allow Anonymous Sessions" on for the app; the API
 allows `anonymous_user` per app (1-day anonymous tokens); and a client grant with
 `subject_type: anonymous_user` and scopes `read:orders create:orders`.
 
