@@ -83,7 +83,10 @@ npm start            # Node server for API + dist/ on PORT (default 3001)
   connector has **no DNS tools** (only store, contacts and domain search), so
   the user adds DNS records by hand in Squarespace → Domains → mmatias.co.uk →
   DNS → Custom records. The Auth0 custom domain `nelson.jp` is a CNAME in the
-  same zone. Status: record requested from the user on 2026-11-23, pending.
+  same zone. **Live since 2026-11-23**: the user added the CNAME. Vercel's
+  DNS check passed, but no certificate appeared on its own, so one was issued
+  with the Vercel MCP `issue_cert` (`cert_nVTNYyBIgICETIbtP1ZLOYrQ`,
+  auto-renew). Both hostnames serve the same production deployment.
 - Why the subdomain: it makes the store the same site as the Auth0 custom
   domain, so the `auth0_anon` cookie is first-party (see §5).
 - `vercel.json` sets `framework: null` and the build command
@@ -149,22 +152,30 @@ What I learned testing `/anonymous/token` (`POST https://<custom domain>/anonymo
 - After login, the Action sees `event.anonymous_session` (`user_id`, `metadata`, …).
 - Known nit: the bag metadata sync is debounced by 1.5 s, so a change made just
   before clicking Sign In can miss the transferred metadata. Flush it before
-  requesting the ticket if that matters.
+  requesting the ticket if that matters. Seen once in the cookie tests: the
+  member got `bag_items: "1"` after the bag had just been emptied. Auth0 does
+  send a fresh `auth0_anon` cookie on every metadata update (checked with
+  curl), so this is only the debounce.
 
-Cookie transfer test results (2026-11-23, live site, Chromium via Playwright):
+Cookie transfer test results (2026-11-23, live site, Chromium via Playwright,
+phone viewport, script flow: guest → add to bag → guest checkout → Sign In →
+member account → Sign Out):
 
-| Browser setting | `auth0_anon` stored? | Transfer at login |
-| --- | --- | --- |
-| Default (third-party cookies allowed) | yes | works; the member token has the transferred `anon@` id and metadata |
-| Third-party cookies blocked (CDP `Network.setCookieControls`, as in Safari/Brave/Firefox strict) | **no** | **fails silently**: no transfer, guest orders not moved |
+| Store URL | Browser setting | `auth0_anon` stored? | Transfer at login |
+| --- | --- | --- | --- |
+| `kinetik-store-zeta.vercel.app` | Default (third-party cookies allowed) | yes | works; the member token has the transferred `anon@` id and metadata |
+| `kinetik-store-zeta.vercel.app` | Third-party cookies blocked (CDP `Network.setCookieControls`, as in Safari/Brave/Firefox strict) | **no** | **fails silently**: no transfer, guest orders not moved |
+| **`kinetik.mmatias.co.uk`** | **Third-party cookies blocked** | **yes** (first-party, 365 days in Chromium) | **works**: guest order moved to the member, metadata transferred, `/anonymous/logout` 204 after login, new guest session after sign-out (2 runs, both passed; ran through the custom ACUL login screens) |
 
-Why: the store (`*.vercel.app`) and the Auth0 domain (`*.mmatias.co.uk`) are
-different sites, so a cookie set by the cross-site `/anonymous/token` call is a
-third-party cookie. Fix options:
+Why the vercel.app URL fails: the store (`*.vercel.app`) and the Auth0 domain
+(`*.mmatias.co.uk`) are different sites, so a cookie set by the cross-site
+`/anonymous/token` call is a third-party cookie. Fix options:
 - (a) Serve the store from a subdomain of `mmatias.co.uk` (same site as the
   Auth0 custom domain). Then the cookie is first-party. **Set up on
   2026-11-23** as `kinetik.mmatias.co.uk`: Vercel domain added, Auth0
-  callbacks/origins/logout URLs updated, DNS record pending (see §4). The app
+  callbacks/origins/logout URLs updated, DNS live (see §4), verified with
+  third-party cookies blocked (table above). Share this URL, not the
+  vercel.app one, when the guest transfer matters. The app
   code needed no change (it uses `window.location.origin`). The API audience
   and the claims namespace still use the `vercel.app` URL; they are only
   identifiers, so they stay as they are.

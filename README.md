@@ -185,8 +185,8 @@ Guests get an Auth0 **anonymous session** without logging in
     the app calls `/anonymous/logout` to end the cookie. On
     `kinetik.mmatias.co.uk` the store and the Auth0 domain
     (`nelson.jp.mmatias.co.uk`) are the same site, so the cookie is first-party
-    and should work even where third-party cookies are blocked (to be confirmed
-    once the DNS record is live). On the `vercel.app`
+    and the transfer works even with third-party cookies blocked (tested). On
+    the `vercel.app`
     URL it is a third-party cookie and only works where those are allowed; see
     HANDOVER for test results.
   - `ticket`: a 30-second, IP-bound transfer ticket
