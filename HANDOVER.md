@@ -140,6 +140,27 @@ What I learned testing `/anonymous/token` (`POST https://<custom domain>/anonymo
   before clicking Sign In can miss the transferred metadata. Flush it before
   requesting the ticket if that matters.
 
+Cookie transfer test results (2026-11-23, live site, Chromium via Playwright):
+
+| Browser setting | `auth0_anon` stored? | Transfer at login |
+| --- | --- | --- |
+| Default (third-party cookies allowed) | yes | works; the member token has the transferred `anon@` id and metadata |
+| Third-party cookies blocked (CDP `Network.setCookieControls`, as in Safari/Brave/Firefox strict) | **no** | **fails silently**: no transfer, guest orders not moved |
+
+Why: the store (`*.vercel.app`) and the Auth0 domain (`*.mmatias.co.uk`) are
+different sites, so a cookie set by the cross-site `/anonymous/token` call is a
+third-party cookie. Fix options:
+- (a) Serve the store from a subdomain of `mmatias.co.uk` (same site as the
+  Auth0 custom domain). Then the cookie is first-party. The user offered to set
+  this up; it needs the Vercel domain plus DNS, plus Auth0 callbacks, origins and
+  logout URLs for the new host.
+- (b) Switch back to ticket mode (`VITE_AUTH0_ANON_TRANSFER=ticket`), which
+  works everywhere.
+
+Also: Safari may cap cookies set by CNAME-cloaked subdomains (the Auth0 custom
+domain is a CNAME) to 7 days, so expect a shorter cookie life there even with
+option (a). The session token kept in localStorage still lasts 365 days.
+
 Behaviour to know about:
 
 - The tenant shows a **passkey enrollment prompt** (`/u/passkey-enrollment`)
@@ -200,7 +221,9 @@ Behaviour to know about:
 ## 7. Known limitations and open items
 
 1. **Persistence:** products, stock and orders live in memory. On Vercel each
-   function instance has its own copy, so member order history can reset.
+   function instance has its own copy, so member order history can reset, and
+   a guest order placed on one instance may not be found (or moved at sign-in)
+   by another. This was seen in the 2026-11-23 live tests.
    Next step: a DB-backed `Catalog`/`Orders` layer (for example `effect/sql`
    with Postgres). Handlers won't need to change.
 2. **Production branch:** open a PR from this branch into `main` if the user
