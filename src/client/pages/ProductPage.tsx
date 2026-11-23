@@ -1,4 +1,4 @@
-import { useAtomValue } from "@effect/atom-react"
+import { useAtomSet, useAtomValue } from "@effect/atom-react"
 import { useEffect, useRef, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router"
 import type { Product, SportId } from "../../shared/Domain.ts"
@@ -9,7 +9,7 @@ import { Photo } from "../components/Photo.tsx"
 import { AsyncView, ErrorState, FavouriteButton, Price, ProductCarousel, productLabel, useAddToBag } from "../components/ui.tsx"
 import { formatMoney } from "../format.ts"
 import type { PhotoName } from "../photos.ts"
-import { productAtom, productsAtom } from "../state.ts"
+import { lastViewedAtom, productAtom, productsAtom } from "../state.ts"
 
 export function ProductPage() {
   const { id = "" } = useParams()
@@ -129,6 +129,9 @@ function ProductDetails({ product }: { product: Product }) {
   const label = productLabel(product)
   const soldOut = product.stock <= 0
   const oneSize = product.sizes.length === 1
+
+  const setLastViewed = useAtomSet(lastViewedAtom)
+  useEffect(() => setLastViewed(product.id), [product.id, setLastViewed])
 
   useEffect(() => {
     document.title = `${product.name} ${product.subtitle}. KINETIK`

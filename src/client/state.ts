@@ -3,7 +3,7 @@ import { Effect, Schema } from "effect"
 import { Atom } from "effect/reactivity"
 import type { CategoryId, DeliveryMethod, Gender, Order, Product, ProductSort, SportId } from "../shared/Domain.ts"
 import { CartLine, ProductId, Quantity, QuoteRequest } from "../shared/Domain.ts"
-import { authAtom } from "./auth.tsx"
+import { authAtom, guestAtom } from "./auth.tsx"
 import { StoreClient } from "./StoreClient.ts"
 
 // ---------------------------------------------------------------------------
@@ -68,6 +68,9 @@ export const Bag = {
 // ---------------------------------------------------------------------------
 
 export const deliveryAtom = Atom.make<DeliveryMethod>("standard").pipe(Atom.keepAlive)
+
+/** The last product a shopper looked at (synced to a guest's anonymous session). */
+export const lastViewedAtom = Atom.make<string | undefined>(undefined).pipe(Atom.keepAlive)
 
 /** The most recent order, so the confirmation page renders instantly. */
 export const lastOrderAtom = Atom.make<Order | undefined>(undefined).pipe(Atom.keepAlive)
@@ -136,19 +139,23 @@ export const quoteAtom = StoreClient.runtime.atom((get) =>
 export const placeOrderAtom = StoreClient.mutation("checkout", "placeOrder")
 export const placeMemberOrderAtom = StoreClient.mutation("account", "placeOrder")
 
-/** The signed-in member's orders (fetched fresh each time the page mounts). */
+/** The member's (or guest's) orders, fetched fresh each time the page mounts. */
 export const myOrdersAtom = StoreClient.runtime.atom((get) =>
   Effect.gen(function*() {
-    if (!get(authAtom).isAuthenticated) return []
+    const auth = get(authAtom)
+    const guest = get(guestAtom)
+    if (auth.isLoading || (!auth.isAuthenticated && !guest)) return []
     const client = yield* StoreClient
     return yield* client.account.orders()
   })
 )
 
-/** What the API sees for the signed-in member: user id and granted scopes. */
+/** What the API sees for the caller (member or guest): user id, scopes, metadata. */
 export const meAtom = StoreClient.runtime.atom((get) =>
   Effect.gen(function*() {
-    if (!get(authAtom).isAuthenticated) return undefined
+    const auth = get(authAtom)
+    const guest = get(guestAtom)
+    if (auth.isLoading || (!auth.isAuthenticated && !guest)) return undefined
     const client = yield* StoreClient
     return yield* client.account.me()
   })

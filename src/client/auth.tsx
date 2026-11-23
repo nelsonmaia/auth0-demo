@@ -7,6 +7,7 @@ import { Atom } from "effect/reactivity"
 import { useEffect } from "react"
 import { useLocation } from "react-router"
 import { Authorization, Scopes } from "../shared/Auth.ts"
+import { createGuestSessions, type GuestInfo } from "./anonymous.ts"
 
 /**
  * Public Auth0 settings (none of these are secrets). Sign-in goes through the
@@ -36,7 +37,19 @@ export interface AuthState {
 /** Auth0 session state, mirrored into Effect Atom so atoms can react to it. */
 export const authAtom = Atom.make<AuthState>({ isLoading: true, isAuthenticated: false }).pipe(Atom.keepAlive)
 
-// The Auth0 SDK owns the tokens; Effect code only asks it for a fresh one.
+/** Auth0 anonymous sessions: guests get an `anon@...` identity without signing in. */
+export const guestSessions = createGuestSessions({
+  domain: auth0Config.domain,
+  clientId: auth0Config.clientId,
+  audience: auth0Config.audience,
+  scope: `anon ${Scopes.readOrders} ${Scopes.createOrders}`
+})
+
+/** The current guest identity (undefined while signed in or before it starts). */
+export const guestAtom = Atom.make<GuestInfo | undefined>(guestSessions.current()).pipe(Atom.keepAlive)
+
+// Members: the Auth0 SDK owns the tokens. Guests: the anonymous session does.
+// Effect code only asks for a fresh one.
 let tokenGetter: (() => Promise<string | undefined>) | undefined
 
 const getAccessToken = async (): Promise<string | undefined> => {
@@ -59,10 +72,23 @@ export const AuthorizationClient = HttpApiMiddleware.layerClient(Authorization, 
 export function AuthBridge() {
   const { isLoading, isAuthenticated, user, getAccessTokenSilently } = useAuth0()
   const setAuth = useAtomSet(authAtom)
+  const setGuest = useAtomSet(guestAtom)
+
+  useEffect(() => guestSessions.subscribe(setGuest), [setGuest])
 
   useEffect(() => {
-    tokenGetter = isAuthenticated ? () => getAccessTokenSilently() : undefined
-  }, [isAuthenticated, getAccessTokenSilently])
+    if (isLoading) {
+      tokenGetter = undefined
+    } else if (isAuthenticated) {
+      tokenGetter = () => getAccessTokenSilently()
+      // The guest session was handed over at sign-in; start fresh after sign-out.
+      if (guestSessions.current()) guestSessions.clear()
+    } else {
+      tokenGetter = () => guestSessions.accessToken()
+      // Start (or continue) the guest's anonymous session.
+      guestSessions.accessToken().catch(() => undefined)
+    }
+  }, [isLoading, isAuthenticated, getAccessTokenSilently])
 
   useEffect(() => {
     const name = user?.name ?? user?.nickname ?? user?.email ?? "Member"
@@ -84,15 +110,27 @@ export function AuthBridge() {
   return null
 }
 
-/** Sign in / join / sign out, returning to where the shopper was. */
+/**
+ * Sign in / join / sign out, returning to where the shopper was. A guest's
+ * anonymous session travels with them: a transfer ticket (cookieless, since the
+ * store and the Auth0 domain are on different sites) is added to /authorize.
+ */
 export function useAuthActions() {
   const { loginWithRedirect, logout } = useAuth0()
   const location = useLocation()
   const here = location.pathname + location.search
+
+  const login = async (returnTo: string, extra: Record<string, string> = {}) => {
+    const ticket = await guestSessions.transferTicket()
+    return loginWithRedirect({
+      appState: { returnTo },
+      authorizationParams: { ...extra, ...(ticket ? { anon_transfer_token: ticket } : {}) }
+    })
+  }
+
   return {
-    signIn: (returnTo: string = here) => loginWithRedirect({ appState: { returnTo } }),
-    join: (returnTo: string = here) =>
-      loginWithRedirect({ appState: { returnTo }, authorizationParams: { screen_hint: "signup" } }),
+    signIn: (returnTo: string = here) => login(returnTo),
+    join: (returnTo: string = here) => login(returnTo, { screen_hint: "signup" }),
     signOut: () => logout({ logoutParams: { returnTo: window.location.origin } })
   }
 }

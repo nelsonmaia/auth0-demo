@@ -4,6 +4,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { App, router } from "./App.tsx"
 import { auth0Config, AuthBridge } from "./auth.tsx"
+import { GuestSync } from "./GuestSync.tsx"
 import "./styles.css"
 
 // After Auth0 redirects back, return the shopper to where they started.
@@ -29,6 +30,7 @@ createRoot(document.getElementById("root")!).render(
     >
       <RegistryProvider>
         <AuthBridge />
+        <GuestSync />
         <App />
       </RegistryProvider>
     </Auth0Provider>

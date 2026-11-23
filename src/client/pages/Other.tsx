@@ -5,7 +5,7 @@ import type { Order } from "../../shared/Domain.ts"
 import { OrderId } from "../../shared/Domain.ts"
 import { deliveryOptions } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
-import { auth0Config, authAtom, type MemberProfile, useAuthActions } from "../auth.tsx"
+import { auth0Config, authAtom, guestAtom, type MemberProfile, useAuthActions } from "../auth.tsx"
 import { Photo } from "../components/Photo.tsx"
 import { CheckIcon, HeartIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, ProductCard, Spinner } from "../components/ui.tsx"
@@ -153,28 +153,46 @@ export function AccountPage() {
 function JoinOrSignIn() {
   const [params] = useSearchParams()
   const { signIn, join } = useAuthActions()
+  const guest = useAtomValue(guestAtom)
   const fromCheckout = params.get("from") === "checkout"
   const returnTo = fromCheckout ? "/checkout" : "/account"
   return (
     <div className="container page account-page">
-      <div className="account-card">
-        <LogoMark size={44} />
-        <h1>{fromCheckout ? "Sign in for Member Checkout" : "Become a KINETIK Member"}</h1>
-        <p className="muted">Join for free or sign in. As a member you get:</p>
-        <ul>
-          <li><CheckIcon size={18} /> Free standard delivery on every order</li>
-          <li><CheckIcon size={18} /> Your order history in one place</li>
-          <li><CheckIcon size={18} /> Faster checkout with your details filled in</li>
-          <li><CheckIcon size={18} /> Early access to new drops</li>
-        </ul>
-        <button type="button" className="button button-primary button-lg button-block" onClick={() => join(returnTo)}>
-          Join Us
-        </button>
-        <button type="button" className="button button-outline button-lg button-block" onClick={() => signIn(returnTo)}>
-          Sign In
-        </button>
-        <p className="muted small">Secure sign-in powered by Auth0.</p>
-        {fromCheckout ? <Link to="/checkout" className="text-link">Continue as guest</Link> : null}
+      <div className="account-stack">
+        <div className="account-card">
+          <LogoMark size={44} />
+          <h1>{fromCheckout ? "Sign in for Member Checkout" : "Become a KINETIK Member"}</h1>
+          <p className="muted">Join for free or sign in. As a member you get:</p>
+          <ul>
+            <li><CheckIcon size={18} /> Free standard delivery on every order</li>
+            <li><CheckIcon size={18} /> Your order history in one place</li>
+            <li><CheckIcon size={18} /> Faster checkout with your details filled in</li>
+            <li><CheckIcon size={18} /> Early access to new drops</li>
+          </ul>
+          {guest ? (
+            <p className="guest-note">
+              You're shopping as a guest. When you join or sign in, your guest orders come with you.
+            </p>
+          ) : null}
+          <button type="button" className="button button-primary button-lg button-block" onClick={() => join(returnTo)}>
+            Join Us
+          </button>
+          <button type="button" className="button button-outline button-lg button-block" onClick={() => signIn(returnTo)}>
+            Sign In
+          </button>
+          <p className="muted small">Secure sign-in powered by Auth0.</p>
+          {fromCheckout ? <Link to="/checkout" className="text-link">Continue as guest</Link> : null}
+        </div>
+
+        {guest ? (
+          <section className="member-section guest-section">
+            <h2>Your Guest Orders</h2>
+            <OrdersList emptyMessage="No guest orders yet. Orders you place as a guest in this browser show up here." />
+            <DeveloperDetails
+              intro="This browser has an Auth0 anonymous session, so the KINETIK API sees a guest identity without a login:"
+            />
+          </section>
+        ) : null}
       </div>
     </div>
   )
@@ -182,8 +200,8 @@ function JoinOrSignIn() {
 
 function MemberAccount({ user }: { user: MemberProfile }) {
   const { signOut } = useAuthActions()
-  const orders = useAtomValue(myOrdersAtom)
   const me = useAtomValue(meAtom)
+  const linked = AsyncResult.isSuccess(me) ? me.value?.linkedAnonymousId : undefined
   return (
     <div className="container page member-page">
       <div className="member-head">
@@ -196,72 +214,109 @@ function MemberAccount({ user }: { user: MemberProfile }) {
         <button type="button" className="button button-outline" onClick={() => signOut()}>Sign Out</button>
       </div>
 
+      {linked ? (
+        <p className="member-note">
+          <span>
+            <CheckIcon size={16} /> We brought your guest activity with you: orders from your guest session (<code>{linked}</code>) are now in
+            your account.
+          </span>
+        </p>
+      ) : null}
+
       <section className="member-section">
         <h2>Your Orders</h2>
-        <AsyncView
-          result={orders}
-          failure={(error) => (
-            <ErrorState
-              message={error?._tag === "Unauthorized" ? "Your session has expired. Please sign in again." : "We couldn't load your orders right now."}
-            />
-          )}
-        >
-          {(list) =>
-            list.length === 0 ? (
-              <div className="empty-state align-left">
-                <p>No orders yet. Orders you place while signed in will show up here.</p>
-                <Link to="/shop" className="button button-primary">Shop Now</Link>
-              </div>
-            ) : (
-              <ul className="order-list">
-                {list.map((order) => (
-                  <li key={order.id}>
-                    <Link to={`/order/${order.id}`}>
-                      <div className="order-list-art">
-                        {order.quote.lines.slice(0, 3).map((line) => (
-                          <ProductArt key={`${line.product.id}:${line.color.id}:${line.size}`} kind={line.product.art} paint={line.color} />
-                        ))}
-                      </div>
-                      <div>
-                        <strong>{order.id}</strong>
-                        <span className="muted">
-                          {formatDate(order.placedAt)} · {order.quote.itemCount} item{order.quote.itemCount === 1 ? "" : "s"} · {formatTotal(order.quote.total)}
-                        </span>
-                        <span className="order-status">Confirmed · arrives by {formatDate(order.estimatedDelivery)}</span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-        </AsyncView>
+        <OrdersList emptyMessage="No orders yet. Orders you place while signed in will show up here." />
         <p className="muted small">
           This demo keeps orders in the server's memory, so older orders may disappear when the server restarts.
         </p>
       </section>
 
-      <details className="accordion dev-details">
-        <summary>Developer details</summary>
-        <p className="muted">What the KINETIK API verified from your Auth0 access token (RS256, checked against the tenant's JWKS):</p>
-        <AsyncView result={me} loading={<Spinner />}>
-          {(member) =>
-            member ? (
-              <dl className="dev-grid">
-                <dt>User ID (sub)</dt>
-                <dd><code>{member.sub}</code></dd>
-                <dt>Scopes</dt>
-                <dd><code>{member.scopes.join(" ") || "none"}</code></dd>
-                <dt>Issuer</dt>
-                <dd><code>https://{auth0Config.domain}/</code></dd>
-                <dt>Audience</dt>
-                <dd><code>{auth0Config.audience}</code></dd>
-                <dt>Client ID</dt>
-                <dd><code>{auth0Config.clientId}</code></dd>
-              </dl>
-            ) : null}
-        </AsyncView>
-      </details>
+      <DeveloperDetails intro="What the KINETIK API verified from your Auth0 access token (RS256, checked against the tenant's JWKS):" />
     </div>
+  )
+}
+
+function OrdersList({ emptyMessage }: { emptyMessage: string }) {
+  const orders = useAtomValue(myOrdersAtom)
+  return (
+    <AsyncView
+      result={orders}
+      failure={(error) => (
+        <ErrorState
+          message={error?._tag === "Unauthorized" ? "Your session has expired. Please sign in again." : "We couldn't load your orders right now."}
+        />
+      )}
+    >
+      {(list) =>
+        list.length === 0 ? (
+          <div className="empty-state align-left">
+            <p>{emptyMessage}</p>
+            <Link to="/shop" className="button button-primary">Shop Now</Link>
+          </div>
+        ) : (
+          <ul className="order-list">
+            {list.map((order) => (
+              <li key={order.id}>
+                <Link to={`/order/${order.id}`}>
+                  <div className="order-list-art">
+                    {order.quote.lines.slice(0, 3).map((line) => (
+                      <ProductArt key={`${line.product.id}:${line.color.id}:${line.size}`} kind={line.product.art} paint={line.color} />
+                    ))}
+                  </div>
+                  <div>
+                    <strong>{order.id}</strong>
+                    <span className="muted">
+                      {formatDate(order.placedAt)} · {order.quote.itemCount} item{order.quote.itemCount === 1 ? "" : "s"} · {formatTotal(order.quote.total)}
+                    </span>
+                    <span className="order-status">Confirmed · arrives by {formatDate(order.estimatedDelivery)}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+    </AsyncView>
+  )
+}
+
+function DeveloperDetails({ intro }: { intro: string }) {
+  const me = useAtomValue(meAtom)
+  return (
+    <details className="accordion dev-details">
+      <summary>Developer details</summary>
+      <p className="muted">{intro}</p>
+      <AsyncView result={me} loading={<Spinner />}>
+        {(member) =>
+          member ? (
+            <dl className="dev-grid">
+              <dt>User ID (sub)</dt>
+              <dd><code>{member.sub}</code></dd>
+              <dt>Identity</dt>
+              <dd>{member.anonymous ? "Auth0 anonymous session (guest)" : "Signed-in member"}</dd>
+              <dt>Scopes</dt>
+              <dd><code>{member.scopes.join(" ") || "none"}</code></dd>
+              {member.linkedAnonymousId ? (
+                <>
+                  <dt>Transferred guest</dt>
+                  <dd><code>{member.linkedAnonymousId}</code></dd>
+                </>
+              ) : null}
+              {member.metadata ? (
+                <>
+                  <dt>{member.anonymous ? "Session metadata" : "Guest metadata"}</dt>
+                  <dd><code>{JSON.stringify(member.metadata)}</code></dd>
+                </>
+              ) : null}
+              <dt>Issuer</dt>
+              <dd><code>https://{auth0Config.domain}/</code></dd>
+              <dt>Audience</dt>
+              <dd><code>{auth0Config.audience}</code></dd>
+              <dt>Client ID</dt>
+              <dd><code>{auth0Config.clientId}</code></dd>
+            </dl>
+          ) : null}
+      </AsyncView>
+    </details>
   )
 }
 

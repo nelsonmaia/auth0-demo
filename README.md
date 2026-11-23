@@ -157,3 +157,34 @@ token.
 Configuration is public and has defaults in code. To override it, use
 `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` and `VITE_AUTH0_AUDIENCE` for the
 browser build, and `AUTH0_DOMAIN` and `AUTH0_AUDIENCE` for the server.
+
+### Anonymous sessions (guests)
+
+Guests get an Auth0 **anonymous session** without logging in
+(`src/client/anonymous.ts`):
+
+- On first visit the browser calls `POST https://nelson.jp.mmatias.co.uk/anonymous/token`.
+  It gets a 30-day session token and a 1-day access token for the store API, with
+  `sub: anon@…` and `sub_profile: "user urn:auth0:anonymous_user"`.
+- The guest's bag count and last viewed product are written into the session
+  **metadata** (`bag_items`, `last_viewed`). The API's claims mapping copies them
+  into the guest token as `kinetik_bag_items` and `kinetik_last_viewed`. The
+  metadata lives inside the session token, so the app always keeps the latest one.
+- Guests order through the account API under their `anon@…` identity. They pay
+  normal guest prices (no member pricing) and can see their guest orders on the
+  Account page.
+- On **Sign In / Join Us**, the app fetches a 30-second, IP-bound transfer ticket
+  (`audience: urn:auth0:anon_transfer`) and passes it to `/authorize` as
+  `anon_transfer_token`. This cookieless transfer is used because the store and
+  the Auth0 domain are different sites.
+- The post-login Action `auth0/actions/kinetik-guest-session-transfer.js` (which
+  only runs for this app) adds the claim
+  `https://kinetik-store-zeta.vercel.app/anonymous_user_id` plus the metadata,
+  and saves `kinetik_last_guest_session` to the user's `app_metadata`. On the
+  member's next request, the API moves the guest's orders into their account.
+
+Tenant configuration: anonymous session lifetime 43,200 minutes (30 days) with
+the anonymous cookie off; "Allow Anonymous Sessions" on for the app; the API
+allows `anonymous_user` per app (1-day anonymous tokens); and a client grant with
+`subject_type: anonymous_user` and scopes `read:orders create:orders`.
+

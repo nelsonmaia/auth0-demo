@@ -1,7 +1,7 @@
 import { Effect, Layer } from "effect"
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api"
 import { StoreApi } from "../shared/Api.ts"
-import { CurrentMember, Forbidden, Scopes } from "../shared/Auth.ts"
+import { CurrentMember, Forbidden, isGuest, Scopes } from "../shared/Auth.ts"
 import { AuthConfig, AuthorizationLive, TokenVerifier } from "./Auth.ts"
 import { Catalog } from "./Catalog.ts"
 import { Orders } from "./Orders.ts"
@@ -48,11 +48,20 @@ const AccountHandlers = HttpApiBuilder.group(
   Effect.fn(function*(handlers) {
     const orders = yield* Orders
 
-    // The Authorization middleware has already verified the token; here we
-    // check the scope each operation needs.
+    // The Authorization middleware has already verified the token (member or
+    // anonymous guest). If a member's token says a guest session was
+    // transferred at sign-in, move that guest's orders to the member first.
+    const caller = Effect.gen(function*() {
+      const member = yield* CurrentMember
+      if (!isGuest(member) && member.linkedAnonymousId) {
+        yield* orders.transfer(member.linkedAnonymousId, member.sub)
+      }
+      return member
+    })
+
     const requireScope = (scope: string) =>
       Effect.gen(function*() {
-        const member = yield* CurrentMember
+        const member = yield* caller
         if (!member.scopes.includes(scope)) {
           return yield* new Forbidden({ message: `This action needs the ${scope} permission.`, requiredScope: scope })
         }
@@ -60,11 +69,13 @@ const AccountHandlers = HttpApiBuilder.group(
       })
 
     return handlers.handleAll({
-      me: () => CurrentMember,
-      quote: ({ payload }) => orders.quote(payload, { member: true }),
+      me: () => caller,
+      // Member pricing is for signed-in members only, not anonymous guests.
+      quote: ({ payload }) =>
+        CurrentMember.pipe(Effect.flatMap((member) => orders.quote(payload, { member: !isGuest(member) }))),
       placeOrder: ({ payload }) =>
         requireScope(Scopes.createOrders).pipe(
-          Effect.flatMap((member) => orders.place(payload, { customerId: member.sub }))
+          Effect.flatMap((member) => orders.place(payload, { customerId: member.sub, member: !isGuest(member) }))
         ),
       orders: () => requireScope(Scopes.readOrders).pipe(Effect.flatMap((member) => orders.listFor(member.sub)))
     })

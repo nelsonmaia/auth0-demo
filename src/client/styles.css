@@ -2770,3 +2770,43 @@ h4 {
   background: #eaf6ef;
   color: var(--text);
 }
+
+/* Guest (anonymous session) ------------------------------------------------ */
+.account-stack {
+  width: 100%;
+  max-width: 720px;
+  display: grid;
+  gap: 48px;
+  justify-items: center;
+}
+
+.account-stack .account-card {
+  justify-self: center;
+}
+
+.guest-section {
+  width: 100%;
+}
+
+.guest-note {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.member-note code,
+.dev-grid code {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.member-note {
+  margin-bottom: 32px;
+}
+
+.member-note span {
+  display: inline-flex;
+  gap: 8px;
+  align-items: flex-start;
+}

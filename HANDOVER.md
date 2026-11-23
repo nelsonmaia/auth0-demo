@@ -7,7 +7,7 @@ decisions, gotchas and open items.
 - **Live site:** https://kinetik-store-zeta.vercel.app (public, works on phones)
 - **Working branch:** `claude/retail-app-effect-auth0-qab8au` (everything is
   here; `main` still has only the initial README)
-- **Last verified:** all 9 API tests pass. The full guest flow and a real
+- **Last verified:** all 11 API tests pass. The full guest flow and a real
   Auth0 member flow (sign in → member checkout → order history → sign out)
   passed in a phone-sized browser against the live site.
 
@@ -39,13 +39,16 @@ src/server/
   main.ts         Node server (API + static dist/) for local and Render
   vercel.ts       Vercel function: Web handler adapted to Node req/res
 src/client/
-  auth.tsx        auth0Config, authAtom, AuthBridge, client Authorization middleware, useAuthActions
+  auth.tsx        auth0Config, authAtom, guestAtom, AuthBridge, client Authorization middleware, useAuthActions
+  anonymous.ts    Auth0 anonymous sessions: create/continue, metadata, transfer ticket (no React)
+  GuestSync.tsx   Syncs bag count / last viewed product into the guest's session metadata
   StoreClient.ts  AtomHttpApi client (FetchHttpClient + AuthorizationClient)
   state.ts        Atoms: bag/favourites (localStorage via Atom.kvs), quote, products, member orders
   art/ProductArt.tsx  SVG sneaker/apparel illustrations (product images)
   photos.ts + components/Photo.tsx  Real CC0 photos for campaign imagery
   pages/          Home, ProductList (filters), ProductPage, Cart, Checkout, Other (order, favourites, account, credits, 404)
-test/api.test.ts  HttpApiTest-based API tests with fake tokens
+test/api.test.ts  HttpApiTest-based API tests with fake tokens (members, guests, transfer)
+auth0/actions/kinetik-guest-session-transfer.js  Source of the deployed post-login Action
 scripts/build-vercel.mjs  Writes .vercel/output (Build Output API v3)
 ```
 
@@ -99,6 +102,38 @@ primary, so the token issuer is `https://nelson.jp.mmatias.co.uk/`.
 | Callbacks / logout / web origins / allowed origins | `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001` |
 | API "KINETIK Store API" | identifier/audience `https://kinetik-store-zeta.vercel.app/api`, RS256, scopes `read:orders` `create:orders`, offline access on, consent skipped for first-party apps |
 | Connections enabled for the app | `Username-Password-Authentication`, `google-oauth2` |
+
+Anonymous sessions (set up on 2026-11-23, feature flag on for the tenant):
+
+| Setting | Value |
+| --- | --- |
+| Tenant `sessions.anonymous` | `lifetime_in_minutes: 43200`, `activate_cookie: false` (cookieless transfer) |
+| Client | `anonymous_sessions.active: true`; `enforce_anon_session_transfer_network_binding: ip` (default) |
+| API | `subject_type_authorization.anonymous_user: require_client_grant`, `token_lifetime_for_anonymous_access_tokens: 86400` |
+| API claims mapping | `kinetik_bag_items` ← `anonymous_session.metadata.bag_items`, `kinetik_last_viewed` ← `anonymous_session.metadata.last_viewed` |
+| Client grant | `cgr_GWIKYnplNIVW9wRs`: `subject_type: anonymous_user`, scopes `read:orders create:orders` |
+| Post-login Action | "KINETIK Store - guest session transfer", id `79c3ccb4-1c55-4a4f-be87-a166e0abca78`, node22, the only post-login binding; no-op for other client IDs |
+
+What I learned testing `/anonymous/token` (`POST https://<custom domain>/anonymous/token`, JSON):
+
+- New session: `{client_id, audience, scope: "anon read:orders create:orders"}` returns
+  `session_token` (opaque, 30 days), `access_token` (`sub: anon@<uuid>`,
+  `sub_profile: "user urn:auth0:anonymous_user"`) and `session_expires_in`.
+- Continue: add `session_token`, which gives the same `sub`. `anonymous_session_token` is
+  rejected (the endpoint allows no extra properties).
+- Metadata: add `metadata: {k: "v"}` (string values). This returns a **new**
+  session token that carries the merged metadata. Reusing an older session
+  token loses later updates, so always keep the latest one.
+- Transfer ticket: `{audience: "urn:auth0:anon_transfer", scope: "anon", session_token}`
+  returns `anon_transfer_token`, valid for 30 seconds and bound to the
+  requester's IP. Pass it to `/authorize` as `anon_transfer_token` (the SPA SDK
+  forwards it via `authorizationParams`).
+- CORS allows the store's origin. There's no server-side invalidation;
+  `/anonymous/logout` only clears the cookie, which is off here.
+- After login, the Action sees `event.anonymous_session` (`user_id`, `metadata`, …).
+- Known nit: the bag metadata sync is debounced by 1.5 s, so a change made just
+  before clicking Sign In can miss the transferred metadata. Flush it before
+  requesting the ticket if that matters.
 
 Behaviour to know about:
 
@@ -170,6 +205,10 @@ Behaviour to know about:
    restricts the pasted token's app.
 5. Nice-to-haves: member-only products gated by scope or role, a Google login
    button test, stock per size, and an order status/tracking page.
+6. Anonymous sessions: the guest bag lives only in localStorage. The session
+   metadata holds just a count. Moving the full bag would need a compact bag
+   encoding (max 25 keys, 255 chars per value) or a server-side bag keyed by
+   the `anon@` id.
 
 ## 8. How to verify changes
 
@@ -178,6 +217,12 @@ Behaviour to know about:
   preinstalled in the cloud container): home → search → product page (size
   required) → bag (change size and quantity) → checkout (validation, express)
   → order confirmation → reload; plus filters, favourites and 404.
+- Guest flow: a fresh browser has `localStorage["kinetik.guest-session.v1"]`
+  with an `anon@` token → add to bag → about 1.5 s later the guest token has
+  `kinetik_bag_items` → Guest Checkout → `/account` lists "Your Guest Orders" →
+  Sign In (the `/authorize` URL has `anon_transfer_token`) → after login the
+  member Account page shows "We brought your guest activity…" and the guest
+  order.
 - Member flow: Member Checkout → Universal Login on
   `nelson.jp.mmatias.co.uk` → skip passkey prompt → checkout shows "Free
   (Member)" and prefilled fields → place order → `/account` lists it and

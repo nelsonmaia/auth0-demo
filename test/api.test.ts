@@ -15,7 +15,19 @@ const makeClient = HttpApiTest.groups(StoreApi, ["system", "catalog", "checkout"
 const verifier = TokenVerifier.layerTest({
   "token-alex": new Member({ sub: "auth0|alex", scopes: ["read:orders", "create:orders"] }),
   "token-sam": new Member({ sub: "auth0|sam", scopes: ["read:orders", "create:orders"] }),
-  "token-readonly": new Member({ sub: "auth0|reader", scopes: ["read:orders"] })
+  "token-readonly": new Member({ sub: "auth0|reader", scopes: ["read:orders"] }),
+  // An Auth0 anonymous session (guest) and the member it is transferred to.
+  "token-guest": new Member({
+    sub: "anon@guest-1",
+    scopes: ["read:orders", "create:orders"],
+    anonymous: true,
+    metadata: { bag_items: "1" }
+  }),
+  "token-jo-after-transfer": new Member({
+    sub: "auth0|jo",
+    scopes: ["read:orders", "create:orders"],
+    linkedAnonymousId: "anon@guest-1"
+  })
 })
 
 /** Client side of the Authorization middleware, sending a given bearer token. */
@@ -176,5 +188,40 @@ layer(Layer.mergeAll(HandlersNoAuth.pipe(Layer.provide(verifier)), HttpServer.la
         .placeOrder({ payload: orderFor([line("club-cap", "khaki", "One Size", 1)]) })
         .pipe(Effect.flip)
       assert.strictEqual(forbidden._tag, "Forbidden")
+    }))
+
+  it.effect("lets anonymous-session guests order without member pricing", () =>
+    Effect.gen(function*() {
+      const guest = yield* clientAs("token-guest")
+      const me = yield* guest.account.me()
+      assert.isTrue(me.anonymous)
+      assert.deepStrictEqual(me.metadata, { bag_items: "1" })
+
+      const payload = new QuoteRequest({ lines: [line("club-cap", "navy", "One Size", 1)], delivery: "standard" })
+      const quote = yield* guest.account.quote({ payload })
+      assert.isFalse(quote.member)
+      assert.strictEqual(quote.deliveryFee, 800)
+
+      const order = yield* guest.account.placeOrder({ payload: orderFor([line("club-cap", "navy", "One Size", 1)]) })
+      assert.strictEqual(order.customerId, "anon@guest-1")
+      assert.strictEqual(order.quote.deliveryFee, 800)
+      const mine = yield* guest.account.orders()
+      assert.isTrue(mine.some((o) => o.id === order.id))
+    }))
+
+  it.effect("moves guest orders to the member after an anonymous session transfer", () =>
+    Effect.gen(function*() {
+      const guest = yield* clientAs("token-guest")
+      const order = yield* guest.account.placeOrder({ payload: orderFor([line("club-cap", "black", "One Size", 1)]) })
+
+      const jo = yield* clientAs("token-jo-after-transfer")
+      const me = yield* jo.account.me()
+      assert.strictEqual(me.linkedAnonymousId, "anon@guest-1")
+      const joOrders = yield* jo.account.orders()
+      const moved = joOrders.find((o) => o.id === order.id)
+      assert.strictEqual(moved?.customerId, "auth0|jo")
+
+      const guestOrders = yield* guest.account.orders()
+      assert.isFalse(guestOrders.some((o) => o.id === order.id))
     }))
 })

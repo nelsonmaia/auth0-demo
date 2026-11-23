@@ -8,7 +8,7 @@ import { deliveryDays, deliveryFee } from "../../shared/Pricing.ts"
 import { StoreIcon, TruckIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, Spinner } from "../components/ui.tsx"
 import { formatDate, formatTotal } from "../format.ts"
-import { authAtom, useAuthActions } from "../auth.tsx"
+import { authAtom, guestAtom, useAuthActions } from "../auth.tsx"
 import { cartAtom, deliveryAtom, lastOrderAtom, placeMemberOrderAtom, placeOrderAtom, quoteAtom } from "../state.ts"
 import { QuoteLines, SummaryTotals } from "./Cart.tsx"
 
@@ -64,6 +64,7 @@ export function CheckoutPage() {
   const [delivery, setDelivery] = useAtom(deliveryAtom)
   const quote = useAtomValue(quoteAtom)
   const auth = useAtomValue(authAtom)
+  const guest = useAtomValue(guestAtom)
   const { signIn } = useAuthActions()
   const placeGuestOrder = useAtomSet(placeOrderAtom, { mode: "promiseExit" })
   const placeMemberOrder = useAtomSet(placeMemberOrderAtom, { mode: "promiseExit" })
@@ -137,7 +138,13 @@ export function CheckoutPage() {
     })
 
     setSubmitting(true)
-    const exit = auth.isAuthenticated ? await placeMemberOrder({ payload }) : await placeGuestOrder({ payload })
+    // Members and guests with an Auth0 anonymous session order through the
+    // account API (so the order is linked to them); otherwise plain guest checkout.
+    let exit = auth.isAuthenticated || guest ? await placeMemberOrder({ payload }) : await placeGuestOrder({ payload })
+    if (!auth.isAuthenticated && Exit.isFailure(exit)) {
+      const failed = Option.getOrUndefined(Cause.findErrorOption(exit.cause))
+      if (failed === undefined || failed._tag === "Unauthorized") exit = await placeGuestOrder({ payload })
+    }
     setSubmitting(false)
 
     if (Exit.isSuccess(exit)) {

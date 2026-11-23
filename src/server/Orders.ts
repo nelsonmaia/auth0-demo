@@ -31,8 +31,10 @@ export interface PricingOptions {
 }
 
 export interface PlaceOptions {
-  /** The Auth0 user id (`sub`) of a signed-in member placing the order. */
+  /** The Auth0 user id (`sub`): a member, or a guest's `anon@...` id. */
   readonly customerId?: string | undefined
+  /** Members get member pricing; guests with an anonymous session do not. */
+  readonly member?: boolean | undefined
 }
 
 export class Orders extends Context.Service<Orders, {
@@ -43,6 +45,8 @@ export class Orders extends Context.Service<Orders, {
   ): Effect.Effect<Order, ProductNotFound | InvalidColor | InvalidSize | OutOfStock>
   get(id: OrderIdType): Effect.Effect<Order, OrderNotFound>
   listFor(customerId: string): Effect.Effect<ReadonlyArray<Order>>
+  /** Moves a guest's orders to a member; returns how many moved. */
+  transfer(fromCustomerId: string, toCustomerId: string): Effect.Effect<number>
 }>()("kinetik/server/Orders") {
   static readonly layer = Layer.effect(
     Orders,
@@ -126,7 +130,7 @@ export class Orders extends Context.Service<Orders, {
 
       const place = Effect.fn("Orders.place")(function*(request: PlaceOrderRequest, options?: PlaceOptions) {
         const customerId = options?.customerId
-        const priced = yield* priceBag(request.lines, request.delivery, customerId !== undefined)
+        const priced = yield* priceBag(request.lines, request.delivery, options?.member ?? false)
         // Reserve stock per product (sizes share one stock level in this demo).
         const perProduct = new Map<string, number>()
         for (const line of priced.lines) {
@@ -153,7 +157,8 @@ export class Orders extends Context.Service<Orders, {
           orderId: order.id,
           total: priced.total,
           items: priced.itemCount,
-          member: customerId !== undefined
+          customer: customerId ?? "guest",
+          member: options?.member ?? false
         })
         return order
       })
@@ -173,7 +178,23 @@ export class Orders extends Context.Service<Orders, {
           .toSorted((a, b) => b.placedAt.localeCompare(a.placedAt))
       })
 
-      return Orders.of({ quote, place, get, listFor })
+      const transfer = Effect.fn("Orders.transfer")(function*(fromCustomerId: string, toCustomerId: string) {
+        const moved = yield* Ref.modify(orders, (map) => {
+          const next = new Map(map)
+          let count = 0
+          for (const [id, order] of map) {
+            if (order.customerId === fromCustomerId) {
+              next.set(id, new Order({ ...order, customerId: toCustomerId }))
+              count++
+            }
+          }
+          return [count, next] as const
+        })
+        if (moved > 0) yield* Effect.logInfo("Guest orders transferred", { from: fromCustomerId, to: toCustomerId, moved })
+        return moved
+      })
+
+      return Orders.of({ quote, place, get, listFor, transfer })
     })
   )
 }
