@@ -4,7 +4,8 @@ Notes for the next agent picking up this repo. Read this together with
 `README.md`, which covers features and local setup. This file covers state,
 decisions, gotchas and open items.
 
-- **Live site:** https://kinetik-store-zeta.vercel.app (public, works on phones)
+- **Live site:** https://kinetik.mmatias.co.uk (custom domain, see §4) and
+  https://kinetik-store-zeta.vercel.app (public, works on phones)
 - **Working branch:** `claude/retail-app-effect-auth0-qab8au` (everything is
   here; `main` still has only the initial README)
 - **Last verified:** all 11 API tests pass. The full guest flow and a real
@@ -73,8 +74,18 @@ npm start            # Node server for API + dist/ on PORT (default 3001)
 
 - Team `team_lK93h31Vdd13Nhv2g6Aglb5Q` ("nelsons-projects"), project
   `kinetik-store` (`prj_Zu6J91XeywGZxIctFqmd3GynUcmu`), linked to GitHub
-  `nelsonmaia/auth0-demo`. The production alias is
-  `kinetik-store-zeta.vercel.app`.
+  `nelsonmaia/auth0-demo`. Production domains: `kinetik-store-zeta.vercel.app`
+  and the custom domain **`kinetik.mmatias.co.uk`** (added 2026-11-23).
+- **Custom domain DNS:** `mmatias.co.uk` is registered with Squarespace
+  (ex-Google Domains, nameservers `ns-cloud-a*.googledomains.com`). The store
+  needs `CNAME kinetik → 51c8d4f947cdfc45.vercel-dns-017.com.` there (Vercel's
+  recommended target; `cname.vercel-dns.com.` also works). The Squarespace MCP
+  connector has **no DNS tools** (only store, contacts and domain search), so
+  the user adds DNS records by hand in Squarespace → Domains → mmatias.co.uk →
+  DNS → Custom records. The Auth0 custom domain `nelson.jp` is a CNAME in the
+  same zone. Status: record requested from the user on 2026-11-23, pending.
+- Why the subdomain: it makes the store the same site as the Auth0 custom
+  domain, so the `auth0_anon` cookie is first-party (see §5).
 - `vercel.json` sets `framework: null` and the build command
   `npm run build:vercel`. The build emits `.vercel/output`: static UI, the
   function `api.func` (esbuild bundle of `src/server/vercel.ts`), and routes
@@ -99,7 +110,7 @@ primary, so the token issuer is `https://nelson.jp.mmatias.co.uk/`.
 | Resource | Details |
 | --- | --- |
 | SPA app "KINETIK Store" | client ID `9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7`, token endpoint auth `none`, grants `authorization_code` + `refresh_token` (rotating) |
-| Callbacks / logout / web origins / allowed origins | `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001` |
+| Callbacks / logout / web origins / allowed origins | `https://kinetik.mmatias.co.uk`, `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001`; `initiate_login_uri` `https://kinetik.mmatias.co.uk/account` |
 | API "KINETIK Store API" | identifier/audience `https://kinetik-store-zeta.vercel.app/api`, RS256, scopes `read:orders` `create:orders`, offline access on, consent skipped for first-party apps |
 | Connections enabled for the app | `Username-Password-Authentication`, `google-oauth2` |
 
@@ -151,9 +162,12 @@ Why: the store (`*.vercel.app`) and the Auth0 domain (`*.mmatias.co.uk`) are
 different sites, so a cookie set by the cross-site `/anonymous/token` call is a
 third-party cookie. Fix options:
 - (a) Serve the store from a subdomain of `mmatias.co.uk` (same site as the
-  Auth0 custom domain). Then the cookie is first-party. The user offered to set
-  this up; it needs the Vercel domain plus DNS, plus Auth0 callbacks, origins and
-  logout URLs for the new host.
+  Auth0 custom domain). Then the cookie is first-party. **Set up on
+  2026-11-23** as `kinetik.mmatias.co.uk`: Vercel domain added, Auth0
+  callbacks/origins/logout URLs updated, DNS record pending (see §4). The app
+  code needed no change (it uses `window.location.origin`). The API audience
+  and the claims namespace still use the `vercel.app` URL; they are only
+  identifiers, so they stay as they are.
 - (b) Switch back to ticket mode (`VITE_AUTH0_ANON_TRANSFER=ticket`), which
   works everywhere.
 
@@ -169,8 +183,9 @@ Behaviour to know about:
   Use the visible "Continue" button; there are hidden submit buttons too.
 - Consent is shown for `localhost` callbacks only.
 - The client uses refresh tokens with `cacheLocation="localstorage"`, because
-  the app (vercel.app) and the auth domain are cross-site, so silent iframe
-  auth won't work on Safari.
+  on vercel.app the app and the auth domain are cross-site, so silent iframe
+  auth won't work on Safari. (On `kinetik.mmatias.co.uk` they are same-site;
+  refresh tokens still work and are kept for both hosts.)
 - Config defaults live in code. Overrides: `VITE_AUTH0_DOMAIN`,
   `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE` (browser) and
   `AUTH0_DOMAIN`, `AUTH0_AUDIENCE` (server).

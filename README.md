@@ -5,7 +5,8 @@ accessories for running, training, basketball, trail and lifestyle, with
 colourways, sizes, filters, a bag and checkout. It is built end to end with
 [Effect](https://effect.website) and is ready for Auth0 to be added next.
 
-**Live demo:** <https://kinetik-store-zeta.vercel.app> (works on phones too)
+**Live demo:** <https://kinetik.mmatias.co.uk> (works on phones too). The
+original Vercel URL <https://kinetik-store-zeta.vercel.app> still works.
 
 > KINETIK is a fictional brand and product names are invented. Campaign
 > imagery (hero, featured tiles, Shop by Sport, The Essentials and the "in
@@ -100,8 +101,10 @@ function at `/api/*`.
 4. Open the `https://<project>.vercel.app` URL on your phone.
 
 The live demo is the Vercel project `kinetik-store`, linked to this repo.
-Its production branch is `main`: pushing to `main` updates
-<https://kinetik-store-zeta.vercel.app> automatically. Pushes to other branches
+It answers on the custom domain `kinetik.mmatias.co.uk` (a `CNAME` at the
+domain's DNS host, which is Squarespace) and on `kinetik-store-zeta.vercel.app`.
+Its production branch is `main`: pushing to `main` updates both
+automatically. Pushes to other branches
 create preview URLs, which by default require you to be logged in to Vercel.
 
 ### Render (alternative)
@@ -126,7 +129,7 @@ custom domain **nelson.jp.mmatias.co.uk**.
 | Piece | Value |
 | --- | --- |
 | Application | "KINETIK Store" single-page application, client ID `9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7` |
-| Callback / logout / web origins | `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001` |
+| Callback / logout / web origins | `https://kinetik.mmatias.co.uk`, `https://kinetik-store-zeta.vercel.app`, `http://localhost:5173`, `http://localhost:3001` |
 | API (audience) | "KINETIK Store API", `https://kinetik-store-zeta.vercel.app/api`, RS256 |
 | Scopes | `read:orders`, `create:orders` |
 | Connections | `Username-Password-Authentication`, `google-oauth2` |
@@ -179,9 +182,13 @@ Guests get an Auth0 **anonymous session** without logging in
     `SameSite=None; Secure; HttpOnly`) on the Auth0 domain during the
     `/anonymous/token` calls. The app sends credentials so the browser keeps the
     cookie current, and `/authorize` picks it up by itself. After the transfer
-    the app calls `/anonymous/logout` to end the cookie. Because the store
-    (vercel.app) and the Auth0 domain are different sites, this only works where
-    the browser accepts third-party cookies; see HANDOVER for test results.
+    the app calls `/anonymous/logout` to end the cookie. On
+    `kinetik.mmatias.co.uk` the store and the Auth0 domain
+    (`nelson.jp.mmatias.co.uk`) are the same site, so the cookie is first-party
+    and should work even where third-party cookies are blocked (to be confirmed
+    once the DNS record is live). On the `vercel.app`
+    URL it is a third-party cookie and only works where those are allowed; see
+    HANDOVER for test results.
   - `ticket`: a 30-second, IP-bound transfer ticket
     (`audience: urn:auth0:anon_transfer`) is passed to `/authorize` as
     `anon_transfer_token`. This works in every browser.
