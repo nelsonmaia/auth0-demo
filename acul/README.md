@@ -73,7 +73,8 @@ flag parameter. The docs show `{ value }` entries, but the live tenant sends pla
 | Experiment | Flag | Cohorts | Status |
 | --- | --- | --- | --- |
 | `exp_sdxjEf9YL9KkeS2C3v5gSA` KINETIK passkey first (by device) | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | Segment "KINETIK on phones" (`seg_g45cttUh7tfpAbU1ivKoTY`, client + `device_type: mobile`) gets B; everyone else falls back to A | completed 2026-11-22 |
-| `exp_gsPF1J4G1zXMsw3wAEBFgb` KINETIK passkeys by country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK in the UK" (`seg_wnGqDTM5uME1Rkv4KZDXZQ`, client + `country: GB`) gets "With passkeys" (control); everyone else falls back to "Without passkeys" | **active** since 2026-11-22 |
+| `exp_gsPF1J4G1zXMsw3wAEBFgb` KINETIK passkeys by country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK in the UK" (`seg_wnGqDTM5uME1Rkv4KZDXZQ`, client + `country: GB`) gets "With passkeys" (control); everyone else falls back to "Without passkeys" | completed 2026-11-23 |
+| `exp_kBxn3AJ7EbVFoXUyg3Nk73` KINETIK passkeys by shopping country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK shopping in the UK" (`seg_wpGqHNkpvLphjxsfomtwfc`): `anonymous_session_metadata.shop_country` = GB, **or** IP country GB when the shopper left the footer picker on Automatic. Everyone else: "Without passkeys" | **active** since 2026-11-23 |
 | KINETIK passkey prompt timing (Exp 1) | `flg_a0_managed_passkey_enrollment` (Auth0-managed) | see HANDOVER.md | not created |
 
 Segment `seg_tZouhVqdez8ThL2MagzQg2` ("KINETIK Store app") matches the KINETIK
@@ -90,3 +91,15 @@ used by the country experiment. The earlier 50/50 draft `exp_wiUXgJC3b5ayCcs2JRM
 `node preview/cohort.cjs <out-dir>` signs in as a phone and a desktop and prints
 the version each gets. Forcing a version with `experiment_id`/`variation_id`
 on `/authorize` did not pass the context while the experiment was a draft.
+
+**Shopping country picker.** The store footer has a country picker
+(`shopCountryAtom` in `src/client/state.ts`). For guests it writes
+`shop_country` (`auto`, `GB`, `US`, `IE`, `FR`, `DE`, `ES`, `PT`) to the Auth0
+anonymous session at once, so the next sign-in is matched by it. Segment rule
+syntax that works: `{"match":{"client_id":[...],"anonymous_session_metadata.shop_country":["GB"]}}`
+and `"not_match":{"anonymous_session_metadata.shop_country":["US",...]}`
+(`{"exists":true}` is also accepted). It relies on the anonymous-session cookie
+reaching `/authorize`, so test on `kinetik.mmatias.co.uk`, not the vercel.app
+URL. A running experiment freezes its segments: to change a rule, complete the
+experiment and start a new one. `node preview/country.cjs [store-url]` checks
+Automatic, UK and US end to end.
