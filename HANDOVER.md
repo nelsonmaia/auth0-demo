@@ -283,7 +283,8 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
 - SMS: the tenant's phone provider is Twilio (Messaging Service with an
   alphanumeric sender) but sends fail until the Twilio account's compliance
   profile (Trust Hub) is approved.
-\n### Management API access and security cleanup (still pending, user action)
+
+### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their
   personal "Default" cloud environment** for host `nelson.jp.auth0.com`. The
