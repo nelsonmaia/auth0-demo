@@ -157,6 +157,15 @@ export function loginId(): HTMLElement {
   )
 }
 
+function codeInsteadButton(go: () => Promise<void>): HTMLElement {
+  const btn = h("button", { type: "button", class: "k-btn k-btn-outline" }, "Email Me a Code Instead")
+  btn.addEventListener("click", () => {
+    btn.classList.add("is-busy")
+    go().catch(() => btn.classList.remove("is-busy"))
+  })
+  return h("div", { class: "k-stack k-stack-tight" }, btn)
+}
+
 // ---------------------------------------------------------------------------
 // Sign in: step 2 (password)
 // ---------------------------------------------------------------------------
@@ -190,6 +199,8 @@ export function loginPassword(): HTMLElement {
       ],
       (data) => sdk.login({ username, password: raw(data, "password"), captcha: cap.value() }),
     ),
+    // Back to the email code (Auth0 offers it when email codes are on).
+    sdk.screen.data?.showSwitchToOtpButton ? codeInsteadButton(() => sdk.switchToOtp()) : null,
     google ? divider() : null,
     google ? googleButton(() => sdk.federatedLogin({ connection: google.name })) : null,
     // The only screen that offers Join: the email and code screens rely on

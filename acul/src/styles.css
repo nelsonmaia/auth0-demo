@@ -522,3 +522,7 @@ body.kinetik {
   color: var(--text);
   font-weight: 500;
 }
+
+.k-stack-tight {
+  margin-top: 12px;
+}
