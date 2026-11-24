@@ -177,3 +177,8 @@ body.kinetik main a,
 body.kinetik [class*="af-"] a {
   font-weight: 500 !important;
 }
+
+/* Flat, like the KINETIK screens: no floating card (inputs keep focus rings) */
+body.kinetik :is(main, section, form, div) {
+  box-shadow: none !important;
+}
