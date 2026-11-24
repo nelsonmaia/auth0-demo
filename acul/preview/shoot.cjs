@@ -46,6 +46,8 @@ const cases = {
     c.experiment = { experiment_id: "exp_mock", variation_id: "var_mock", variation_name: "Passkey first", is_control: false, config: { passkey_first: { value: true } } }
     return c
   })(),
+  "code-email-challenge": base("email-identifier-challenge", { screen: { links: {}, data: { email: "jane.runner@example.com", messageType: "signup" } } }),
+  "code-email-error": base("email-identifier-challenge", { screen: { links: {}, data: { email: "jane.runner@example.com" } }, transaction: { errors: [{ code: "invalid-code", field: "code", message: "The code you entered is invalid." }] } }),
   "hint-login-id": base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
   "hint-signup-id": base("signup-id", { screen: { links: { login: "#login" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
   "exp-no-passkeys": (() => {

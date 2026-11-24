@@ -8,6 +8,9 @@ import ResetPasswordEmail from "@auth0/auth0-acul-js/reset-password-email"
 import ResetPassword from "@auth0/auth0-acul-js/reset-password"
 import ResetPasswordSuccess from "@auth0/auth0-acul-js/reset-password-success"
 import ResetPasswordError from "@auth0/auth0-acul-js/reset-password-error"
+import EmailIdentifierChallenge from "@auth0/auth0-acul-js/email-identifier-challenge"
+import LoginEmailVerification from "@auth0/auth0-acul-js/login-email-verification"
+import PhoneIdentifierChallenge from "@auth0/auth0-acul-js/phone-identifier-challenge"
 import { h } from "./dom.ts"
 import {
   STORE_URL,
@@ -399,6 +402,116 @@ export function resetPasswordError(): HTMLElement {
   )
 }
 
+// ---------------------------------------------------------------------------
+// One-time code screens (join email check, email code sign-in, phone check)
+// ---------------------------------------------------------------------------
+interface CodeScreenOptions {
+  title: string
+  sub: string
+  errors: ReadonlyArray<{ code: string; field?: string; message: string }>
+  submit: (code: string) => Promise<void>
+  resend?: { manager: (o: { timeoutSeconds: number; onStatusChange: (s: number, d: boolean) => void }) => { startResend: () => void }; limitReached?: boolean }
+  back?: { label: string; go: () => Promise<void> | void } | null
+  extra?: Array<HTMLElement | null>
+}
+
+function codeScreen(o: CodeScreenOptions): HTMLElement {
+  const code = field({
+    name: "code",
+    label: "Enter code",
+    autocomplete: "one-time-code",
+    inputmode: "numeric",
+    error: fieldError(o.errors as never, "code"),
+  })
+  code.input.setAttribute("maxlength", "10")
+  code.input.addEventListener("input", () => {
+    code.input.value = code.input.value.replace(/\s+/g, "")
+  })
+
+  let resendEl: HTMLElement | null = null
+  if (o.resend) {
+    if (o.resend.limitReached) {
+      resendEl = h("p", { class: "k-hint-left" }, "You've asked for too many codes. Wait a few minutes, then go back and try again.")
+    } else {
+      const btn = h("button", { type: "button", class: "k-link-button" }, "Resend code")
+      const control = o.resend.manager({
+        timeoutSeconds: 30,
+        onStatusChange: (remaining, disabled) => {
+          btn.disabled = disabled
+          btn.textContent = disabled && remaining > 0 ? `Resend code in ${remaining}s` : "Resend code"
+        },
+      })
+      btn.addEventListener("click", () => control.startResend())
+      resendEl = h("p", { class: "k-resend" }, "Didn't get it? ", btn)
+    }
+  }
+
+  return h(
+    "div",
+    {},
+    ...title(o.title, o.sub),
+    form(
+      [errorBanner(o.errors as never, ["code", "captcha"]), code.el, resendEl, primaryButton("Continue")],
+      (data) => o.submit(str(data, "code")),
+    ),
+    ...(o.extra ?? []),
+    o.back
+      ? h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); o.back?.go() } }, o.back.label))
+      : null,
+  )
+}
+
+export function emailIdentifierChallenge(): HTMLElement {
+  const sdk = new EmailIdentifierChallenge()
+  const email = sdk.screen.data?.email
+  return codeScreen({
+    title: "Check your email",
+    sub: email ? `We've sent a code to ${email}. Enter it below to continue.` : "We've sent you a code. Enter it below to continue.",
+    errors: sdk.getErrors(),
+    submit: (code) => sdk.submitEmailChallenge({ code }),
+    resend: { manager: (o) => sdk.resendManager(o), limitReached: sdk.screen.data?.resendLimitReached },
+    back: { label: "Use a different email", go: () => sdk.returnToPrevious() },
+    extra: [
+      sdk.screen.data?.showSwitchToPasswordButton
+        ? h("div", { class: "k-stack" }, h("button", { type: "button", class: "k-btn k-btn-outline", onclick: () => sdk.switchToPassword() }, "Use a Password Instead"))
+        : null,
+    ],
+  })
+}
+
+export function loginEmailVerification(): HTMLElement {
+  const sdk = new LoginEmailVerification()
+  return codeScreen({
+    title: "Check your email",
+    sub: "We've sent you a sign-in code. Enter it below to continue.",
+    errors: sdk.getErrors(),
+    submit: (code) => sdk.continueWithCode({ code }),
+    resend: { manager: (o) => sdk.resendManager(o) },
+  })
+}
+
+export function phoneIdentifierChallenge(): HTMLElement {
+  const sdk = new PhoneIdentifierChallenge()
+  const phone = sdk.screen.data?.phone
+  const voice = sdk.screen.data?.messageType === "voice"
+  return codeScreen({
+    title: voice ? "Answer your phone" : "Check your messages",
+    sub: phone ? `We've sent a code to ${phone}. Enter it below to continue.` : "We've sent you a code. Enter it below to continue.",
+    errors: sdk.getErrors(),
+    submit: (code) => sdk.submitPhoneChallenge({ code }),
+    resend: { manager: (o) => sdk.resendManager(o), limitReached: sdk.screen.data?.resendLimitReached },
+    back: { label: "Use a different number", go: () => sdk.returnToPrevious() },
+    extra: [
+      sdk.screen.data?.showLinkVoice && !voice
+        ? h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.switchToVoice() } }, "Call me instead"))
+        : null,
+      sdk.screen.data?.showLinkSms && voice
+        ? h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.switchToText() } }, "Text me instead"))
+        : null,
+    ],
+  })
+}
+
 export const screens: Record<string, () => HTMLElement> = {
   "login-id": loginId,
   "login-password": loginPassword,
@@ -410,4 +523,7 @@ export const screens: Record<string, () => HTMLElement> = {
   "reset-password": resetPassword,
   "reset-password-success": resetPasswordSuccess,
   "reset-password-error": resetPasswordError,
+  "email-identifier-challenge": emailIdentifierChallenge,
+  "login-email-verification": loginEmailVerification,
+  "phone-identifier-challenge": phoneIdentifierChallenge,
 }
