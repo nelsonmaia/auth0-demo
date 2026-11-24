@@ -1,4 +1,4 @@
-import { Context, DateTime, Effect, Layer, Random, Ref } from "effect"
+import { Context, DateTime, Effect, Layer, Random } from "effect"
 import type {
   CartLine,
   DeliveryMethod,
@@ -20,6 +20,7 @@ import {
 } from "../shared/Domain.ts"
 import { deliveryDays, deliveryFee, FREE_DELIVERY_THRESHOLD } from "../shared/Pricing.ts"
 import { Catalog } from "./Catalog.ts"
+import { OrderStore } from "./OrderStore.ts"
 
 /**
  * Prices bags and places orders. Prices always come from the catalog, never
@@ -52,7 +53,7 @@ export class Orders extends Context.Service<Orders, {
     Orders,
     Effect.gen(function*() {
       const catalog = yield* Catalog
-      const orders = yield* Ref.make(new Map<string, Order>())
+      const store = yield* OrderStore
 
       // Merge duplicate product/colour/size lines so quantities add up.
       const mergeLines = (lines: ReadonlyArray<CartLine>) => {
@@ -152,7 +153,7 @@ export class Orders extends Context.Service<Orders, {
           address: request.address,
           quote: priced
         })
-        yield* Ref.update(orders, (map) => new Map(map).set(order.id, order))
+        yield* store.save(order)
         yield* Effect.logInfo("Order placed", {
           orderId: order.id,
           total: priced.total,
@@ -164,7 +165,7 @@ export class Orders extends Context.Service<Orders, {
       })
 
       const get = Effect.fn("Orders.get")(function*(id: OrderIdType) {
-        const order = (yield* Ref.get(orders)).get(id)
+        const order = yield* store.get(id)
         if (order === undefined) {
           return yield* new OrderNotFound({ orderId: id })
         }
@@ -172,24 +173,11 @@ export class Orders extends Context.Service<Orders, {
       })
 
       const listFor = Effect.fn("Orders.listFor")(function*(customerId: string) {
-        const all = yield* Ref.get(orders)
-        return [...all.values()]
-          .filter((order) => order.customerId === customerId)
-          .toSorted((a, b) => b.placedAt.localeCompare(a.placedAt))
+        return yield* store.listFor(customerId)
       })
 
       const transfer = Effect.fn("Orders.transfer")(function*(fromCustomerId: string, toCustomerId: string) {
-        const moved = yield* Ref.modify(orders, (map) => {
-          const next = new Map(map)
-          let count = 0
-          for (const [id, order] of map) {
-            if (order.customerId === fromCustomerId) {
-              next.set(id, new Order({ ...order, customerId: toCustomerId }))
-              count++
-            }
-          }
-          return [count, next] as const
-        })
+        const moved = yield* store.transfer(fromCustomerId, toCustomerId)
         if (moved > 0) yield* Effect.logInfo("Guest orders transferred", { from: fromCustomerId, to: toCustomerId, moved })
         return moved
       })

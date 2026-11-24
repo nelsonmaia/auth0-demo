@@ -6,6 +6,7 @@ import { CurrentMember, Forbidden, isGuest, Scopes } from "../shared/Auth.ts"
 import { AuthConfig, AuthorizationLive, TokenVerifier } from "./Auth.ts"
 import { Catalog } from "./Catalog.ts"
 import { Orders } from "./Orders.ts"
+import { OrderStore } from "./OrderStore.ts"
 
 const SystemHandlers = HttpApiBuilder.group(
   StoreApi,
@@ -91,7 +92,7 @@ const AccountHandlers = HttpApiBuilder.group(
 )
 
 /** Domain services shared by every handler (a single Catalog instance). */
-export const ServicesLive = Orders.layer.pipe(Layer.provideMerge(Catalog.layer))
+export const ServicesLive = Orders.layer.pipe(Layer.provide(OrderStore.layer), Layer.provideMerge(Catalog.layer))
 
 /** All endpoint handlers with the domain services, but no token verifier. */
 export const HandlersNoAuth = Layer.mergeAll(SystemHandlers, CatalogHandlers, CheckoutHandlers, AccountHandlers).pipe(

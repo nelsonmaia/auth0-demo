@@ -164,6 +164,11 @@ export function CheckoutPage() {
           last_order_id: exit.value.id
         }
         if (v.phone) details.phone = v.phone
+        // Hints for the member profile form: the sport and UK shoe size of the
+        // shoes they just bought (pre-filled, never forced).
+        const hints = purchaseHints(exit.value.quote.lines)
+        if (hints.sport) details.order_sport = hints.sport
+        if (hints.shoeSizeUk) details.order_shoe_size_uk = hints.shoeSizeUk
         guestSessions.setMetadata(details).catch(() => undefined)
       }
       setLastOrder(exit.value)
@@ -293,4 +298,27 @@ export function CheckoutPage() {
       </div>
     </div>
   )
+}
+
+/**
+ * What a purchase says about the shopper: the sport of the first pair of
+ * shoes (or of the first item), and that pair's size converted to UK.
+ * US to UK is approximate: men's minus 1, women's minus 2; unisex sizes use
+ * the men's figure; kids' sizes are skipped.
+ */
+export function purchaseHints(lines: ReadonlyArray<{ product: { category: string; sport: string; genders: ReadonlyArray<string> }; size: string }>) {
+  const shoe = lines.find((line) => line.product.category === "shoes")
+  const sport = (shoe ?? lines[0])?.product.sport
+  let shoeSizeUk: string | undefined
+  if (shoe) {
+    const genders = shoe.product.genders
+    const men = /M\s*([\d.]+)/.exec(shoe.size)?.[1]
+    const plain = /^[\d.]+$/.test(shoe.size) ? shoe.size : undefined
+    let uk: number | undefined
+    if (men) uk = Number(men) - 1
+    else if (plain && genders.length === 1 && genders[0] === "men") uk = Number(plain) - 1
+    else if (plain && genders.length === 1 && genders[0] === "women") uk = Number(plain) - 2
+    if (uk !== undefined && Number.isFinite(uk) && uk >= 2 && uk <= 15) shoeSizeUk = String(uk)
+  }
+  return { sport, shoeSizeUk }
 }

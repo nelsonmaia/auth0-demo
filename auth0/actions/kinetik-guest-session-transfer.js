@@ -47,6 +47,12 @@ function mergeGuestDetails(profile, metadata) {
     };
     changed = true;
   }
+  // Shoe size from a guest shoe order (UK, converted by the store).
+  const orderSize = clean(metadata.order_shoe_size_uk, 4);
+  if (!next.shoe_size_uk && /^\d{1,2}(\.5)?$/.test(orderSize)) {
+    next.shoe_size_uk = orderSize;
+    changed = true;
+  }
   if (metadata.newsletter === "yes" && next.marketing_opt_in !== true) {
     next.marketing_opt_in = true;
     next.marketing_source = "store_news_signup";
@@ -96,9 +102,16 @@ exports.onExecutePostLogin = async (event, api) => {
   const lastName = profile.last_name || event.user.family_name || "";
   const askContact = !(firstName && lastName);
 
+  // Pre-fill what a guest purchase suggests: the sport of the shoes bought
+  // and their size. The shopper can still change both.
+  const orderSport = clean(anon?.metadata?.order_sport, 20);
+  const fields = askContact ? { first_name: firstName, last_name: lastName } : {};
+  if (SPORTS.includes(orderSport)) fields.favourite_sport = orderSport;
+  if (profile.shoe_size_uk) fields.shoe_size = profile.shoe_size_uk;
+
   api.prompt.render(PROFILE_FORM_ID, {
     vars: { ask_contact: askContact ? "yes" : "no", profile: JSON.stringify(profile) },
-    fields: askContact ? { first_name: firstName, last_name: lastName } : {}
+    fields
   });
 };
 
