@@ -6,7 +6,7 @@ import type { Order } from "../../shared/Domain.ts"
 import { OrderId } from "../../shared/Domain.ts"
 import { deliveryOptions } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
-import { auth0Config, authAtom, guestAtom, type MemberProfile, useAuthActions } from "../auth.tsx"
+import { auth0Config, authAtom, guestAtom, guestSessions, type MemberProfile, useAuthActions } from "../auth.tsx"
 import { Photo } from "../components/Photo.tsx"
 import { CheckIcon, HeartIcon } from "../components/Icons.tsx"
 import { AsyncView, ErrorState, ProductCard, Spinner } from "../components/ui.tsx"
@@ -272,6 +272,67 @@ function MemberAccount({ user }: { user: MemberProfile }) {
 
       <DeveloperDetails intro="What the KINETIK API verified from your Auth0 access token (RS256, checked against the tenant's JWKS):" />
     </div>
+  )
+}
+
+/**
+ * Orders without the sign-in redirect: guests see the orders of this
+ * browser's guest session, members their order history.
+ */
+export function OrdersPage() {
+  const auth = useAtomValue(authAtom)
+  const guest = useAtomValue(guestAtom)
+  const { signIn } = useAuthActions()
+  if (auth.isLoading) {
+    return (
+      <div className="container page">
+        <Spinner label="Loading your orders" />
+      </div>
+    )
+  }
+  return (
+    <div className="container page orders-page">
+      <h1>Your Orders</h1>
+      {auth.isAuthenticated ? (
+        <OrdersList emptyMessage="No orders yet. When you place one, it shows up here." />
+      ) : (
+        <>
+          <p className="muted">
+            You're shopping as a guest. These are the orders placed in this browser.{" "}
+            <button type="button" className="text-link link-button" onClick={() => signIn("/orders")}>Sign in</button>{" "}
+            to see your full order history; your guest orders come with you.
+          </p>
+          {guest ? (
+            <OrdersList emptyMessage="No guest orders yet. Orders you place as a guest in this browser show up here." />
+          ) : (
+            <p className="muted">No guest orders in this browser.</p>
+          )}
+          <StartOverAsGuest />
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Demo helper: forget this browser's guest session and shopping state. */
+export function StartOverAsGuest({ compact = false }: { compact?: boolean }) {
+  const [busy, setBusy] = useState(false)
+  const reset = async () => {
+    if (!window.confirm("Start over as a new guest? This clears your bag, remembered email, country and guest session in this browser.")) return
+    setBusy(true)
+    await guestSessions.reset()
+    try {
+      for (const key of Object.keys(localStorage)) if (key.startsWith("kinetik.")) localStorage.removeItem(key)
+      sessionStorage.clear()
+    } catch {
+      // Storage blocked: the guest session itself is already gone.
+    }
+    window.location.assign("/")
+  }
+  return (
+    <button type="button" className={compact ? "link-button footer-reset" : "button button-outline"} onClick={reset} disabled={busy}>
+      {busy ? "Starting over…" : "Start over as a new guest"}
+    </button>
   )
 }
 

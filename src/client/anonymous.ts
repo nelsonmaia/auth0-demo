@@ -218,6 +218,24 @@ export function createGuestSessions(config: GuestSessionConfig) {
         }
       }),
 
+    /**
+     * "Start over as a new guest": forgets the session here and ends it at
+     * Auth0 (clears the auth0_anon cookie), waiting for that to finish.
+     * Auth0 keeps no server-side list of anonymous sessions to delete; the
+     * session only lives in this browser until it expires.
+     */
+    async reset(): Promise<void> {
+      current = undefined
+      save(undefined)
+      publish()
+      await fetch(`https://${config.domain}/anonymous/logout`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ client_id: config.clientId })
+      }).catch(() => undefined)
+    },
+
     /** Forgets the guest session (after it has been handed to a member). */
     clear() {
       current = undefined

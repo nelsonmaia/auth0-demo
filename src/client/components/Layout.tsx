@@ -5,6 +5,7 @@ import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
 import { authAtom, guestSessions, useAuthActions } from "../auth.tsx"
 import { knownEmailAtom } from "../knownEmail.ts"
+import { StartOverAsGuest } from "../pages/Other.tsx"
 import { SHOP_COUNTRIES, countryName, effectiveCountry, shopCountryAtom, useDetectedCountry } from "../geo.ts"
 import { formatMoney } from "../format.ts"
 import { cartCountAtom, favouritesAtom, productsAtom, toastAtom } from "../state.ts"
@@ -410,7 +411,7 @@ function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
         <nav className="drawer-links">
           <Link to="/cart"><BagIcon size={22} /> Bag</Link>
           <Link to="/favourites"><HeartIcon size={22} /> Favourites</Link>
-          <Link to="/account"><CheckIcon size={22} /> Orders</Link>
+          <Link to="/orders"><CheckIcon size={22} /> Orders</Link>
         </nav>
       </aside>
     </div>
@@ -543,6 +544,13 @@ function NewsSignup() {
   )
 }
 
+/** Demo helper for guests: forget this browser's guest session. */
+function GuestReset() {
+  const auth = useAtomValue(authAtom)
+  if (auth.isLoading || auth.isAuthenticated) return null
+  return <StartOverAsGuest compact />
+}
+
 function Footer() {
   return (
     <footer className="site-footer">
@@ -558,7 +566,7 @@ function Footer() {
           <h4>Help</h4>
           <Link to="/cart">Your Bag</Link>
           <Link to="/favourites">Favourites</Link>
-          <Link to="/account">Order Status</Link>
+          <Link to="/orders">Your Orders</Link>
           <span>Delivery &amp; Returns</span>
         </div>
         <div>
@@ -575,6 +583,7 @@ function Footer() {
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} KINETIK — a demo store. Not a real shop; no payments are taken.</span>
         <span>Built with Effect, React and Vite</span>
+        <GuestReset />
       </div>
     </footer>
   )
