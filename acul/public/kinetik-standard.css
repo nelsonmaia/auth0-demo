@@ -3,39 +3,50 @@
  * screens don't cover, e.g. the sign-up confirmation, and Auth0 Forms).
  * Loaded by the tenant page template only when application.id is KINETIK.
  */
+/* Theme variables: set on every element, because Auth0 Forms re-declare
+   them on an inner container. */
+body.kinetik,
+body.kinetik * {
+  --primary-color: #111111 !important;
+  --button-font-color: #ffffff !important;
+  --secondary-button-border-color: #cacacb !important;
+  --social-button-border-color: #cacacb !important;
+  --secondary-button-text-color: #111111 !important;
+  --link-color: #111111 !important;
+  --title-font-color: #111111 !important;
+  --font-default-color: #111111 !important;
+  --font-light-color: #707072 !important;
+  --widget-background-color: #ffffff !important;
+  --box-border-color: transparent !important;
+  --input-text-color: #111111 !important;
+  --input-border-color: #cacacb !important;
+  --border-default-color: #cacacb !important;
+  --input-background-color: #ffffff !important;
+  --icon-default-color: #111111 !important;
+  --error-color: #d30005 !important;
+  --success-color: #007d48 !important;
+  --base-focus-color: #111111 !important;
+  --transparency-focus-color: rgba(17, 17, 17, 0.12) !important;
+  --base-hover-color: #707072 !important;
+  --title-font-size: 1.75rem !important;
+  --title-font-weight: 500 !important;
+  --button-border-radius: 999px !important;
+  --input-border-radius: 8px !important;
+  --border-radius-outer: 0px !important;
+  --box-border-width: 0px !important;
+  --logo-height: 0px !important;
+  --page-background-color: #ffffff !important;
+}
+
 body.kinetik {
-  --primary-color: #111111;
-  --button-font-color: #ffffff;
-  --secondary-button-border-color: #cacacb;
-  --social-button-border-color: #cacacb;
-  --secondary-button-text-color: #111111;
-  --link-color: #111111;
-  --title-font-color: #111111;
-  --font-default-color: #111111;
-  --font-light-color: #707072;
-  --widget-background-color: #ffffff;
-  --box-border-color: transparent;
-  --input-text-color: #111111;
-  --input-border-color: #cacacb;
-  --border-default-color: #cacacb;
-  --input-background-color: #ffffff;
-  --icon-default-color: #111111;
-  --error-color: #d30005;
-  --success-color: #007d48;
-  --base-focus-color: #111111;
-  --transparency-focus-color: rgba(17, 17, 17, 0.12);
-  --base-hover-color: #707072;
-  --title-font-size: 1.75rem;
-  --title-font-weight: 500;
-  --button-border-radius: 999px;
-  --input-border-radius: 8px;
-  --border-radius-outer: 0px;
-  --box-border-width: 0px;
-  --logo-height: 0px;
-  --page-background-color: #ffffff;
   background: #ffffff !important;
   font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
   -webkit-font-smoothing: antialiased;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body.kinetik * {
@@ -44,10 +55,9 @@ body.kinetik * {
 
 /* Header with the KINETIK logo (added by the page template) */
 .kinetik-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -81,10 +91,10 @@ body.kinetik * {
 }
 
 .kinetik-legal {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: auto !important;
   max-width: 500px;
   margin: 0 auto;
   padding: 20px 20px 28px;
@@ -93,9 +103,10 @@ body.kinetik * {
 }
 
 /* Auth0's card: no box, full width up to 460px, left-aligned like ACUL */
-body.kinetik main._widget {
-  padding-top: 72px;
-  padding-bottom: 80px;
+body.kinetik main._widget,
+body.kinetik > div:not(.kinetik-bar) {
+  flex: 1 0 auto;
+  width: 100%;
 }
 
 body.kinetik ._prompt-box-outer {
@@ -137,4 +148,32 @@ body.kinetik button[data-action-button-primary="true"] {
 
 body.kinetik a {
   text-decoration: underline;
+}
+
+body.kinetik .kinetik-logo,
+body.kinetik .kinetik-back {
+  text-decoration: none !important;
+}
+
+/* Auth0 Forms: primary button and inputs */
+body.kinetik [class*="af-"] input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+body.kinetik [class*="af-"] select {
+  background: #ffffff !important;
+  border-color: #cacacb !important;
+  border-radius: 8px !important;
+}
+
+body.kinetik [class*="af-"] button[type="submit"],
+body.kinetik [class*="af-nextButton"],
+body.kinetik [class*="af-button"] {
+  background: #111111 !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+body.kinetik main a,
+body.kinetik [class*="af-"] a {
+  font-weight: 500 !important;
 }
