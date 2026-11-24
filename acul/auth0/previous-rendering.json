@@ -76,5 +76,57 @@
     ],
     "filters": null,
     "use_page_template": false
+  },
+  {
+    "tenant": "nelson",
+    "prompt": "email-identifier-challenge",
+    "screen": "email-identifier-challenge",
+    "rendering_mode": "standard",
+    "context_configuration": [],
+    "default_head_tags_disabled": false,
+    "head_tags": [
+      {
+        "tag": "script",
+        "attributes": {
+          "src": "https://ikea-acul.vercel.app/index.js",
+          "defer": "true"
+        }
+      },
+      {
+        "tag": "link",
+        "attributes": {
+          "rel": "stylesheet",
+          "href": "https://ikea-acul.vercel.app/index.css"
+        }
+      }
+    ],
+    "filters": null,
+    "use_page_template": false
+  },
+  {
+    "tenant": "nelson",
+    "prompt": "login-email-verification",
+    "screen": "login-email-verification",
+    "rendering_mode": "standard",
+    "context_configuration": [],
+    "default_head_tags_disabled": false,
+    "head_tags": [
+      {
+        "tag": "script",
+        "attributes": {
+          "src": "https://ikea-acul.vercel.app/index.js",
+          "defer": "true"
+        }
+      },
+      {
+        "tag": "link",
+        "attributes": {
+          "rel": "stylesheet",
+          "href": "https://ikea-acul.vercel.app/index.css"
+        }
+      }
+    ],
+    "filters": null,
+    "use_page_template": false
   }
 ]
