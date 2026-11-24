@@ -1,6 +1,6 @@
 // Prints the SRI hashes of the built files (for the Auth0 head_tags).
 import { createHash } from "node:crypto"
-import { readFileSync, writeFileSync } from "node:fs"
+import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs"
 
 const files = ["kinetik-login.js", "kinetik-login.css"]
 const sri = Object.fromEntries(
@@ -8,3 +8,7 @@ const sri = Object.fromEntries(
 )
 writeFileSync("dist/sri.json", JSON.stringify(sri, null, 2) + "\n")
 console.log(sri)
+
+// Static files served next to the bundle (e.g. kinetik-standard.css, used by
+// the tenant page template for Auth0's standard pages).
+if (existsSync("public")) cpSync("public", "dist", { recursive: true })

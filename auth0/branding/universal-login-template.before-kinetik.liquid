@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+  {% assign resolved_dir = dir | default: "auto" %}
+  {% assign ikea_custom_form_apps = "ckeLWJD699AWzNRAA40MYaKs7CCGq7cb,72CBJSBponCaM7BogQrwLpxyuTChJa0v" | split: "," %}
+  {% assign use_ikea_custom_form = false %}
+  {% if prompt.name == "custom-form" and ikea_custom_form_apps contains application.id %}
+    {% assign use_ikea_custom_form = true %}
+  {% endif %}
+  <html lang="{{locale}}" dir="{{resolved_dir}}">
+
+  <head>
+    <title>{{prompt.screen.texts.pageTitle}}</title>
+    {% if use_ikea_custom_form %}
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <script>
+      window.universal_login_context = {
+        "client": {
+          "id": "WkdfgJHbOcxI3",
+          "name": "Ikea"
+        },
+        "prompt": { "name": "custom-form" },
+        "screen": {
+          "name": "custom-form",
+          "tenant": {
+            "name": "nelson"
+          },
+          "custom_domain": { "domain": "nelson.jp.mmatias.co.uk" },
+          "locale": "en"
+        },
+        "transaction": {
+          "state": "hKFo2SA3VHY1RnJWMkhFV0lEWmg"
+        }
+      };
+      window.auth0_form_id = window.location.pathname.split('/u/custom-prompt/')[1];
+    </script>
+    <link rel="stylesheet" href="https://fan8d1shexabo8ob.public.blob.vercel-storage.com/index-B-V2CXRd.css">
+    {% else %}
+      {%- auth0:head -%}
+    {% endif %}
+  </head>
+
+  <body class="_widget-auto-layout">
+    {% if use_ikea_custom_form %}
+      <script src="https://fan8d1shexabo8ob.public.blob.vercel-storage.com/index-DA4PhKGr.js" defer></script>
+    {% else %}
+      {%- auth0:widget -%}
+    {% endif %}
+  </body>
+
+  </html>

@@ -1,0 +1,140 @@
+/*
+ * KINETIK look for Auth0's *standard* Universal Login pages (screens the ACUL
+ * screens don't cover, e.g. the sign-up confirmation, and Auth0 Forms).
+ * Loaded by the tenant page template only when application.id is KINETIK.
+ */
+body.kinetik {
+  --primary-color: #111111;
+  --button-font-color: #ffffff;
+  --secondary-button-border-color: #cacacb;
+  --social-button-border-color: #cacacb;
+  --secondary-button-text-color: #111111;
+  --link-color: #111111;
+  --title-font-color: #111111;
+  --font-default-color: #111111;
+  --font-light-color: #707072;
+  --widget-background-color: #ffffff;
+  --box-border-color: transparent;
+  --input-text-color: #111111;
+  --input-border-color: #cacacb;
+  --border-default-color: #cacacb;
+  --input-background-color: #ffffff;
+  --icon-default-color: #111111;
+  --error-color: #d30005;
+  --success-color: #007d48;
+  --base-focus-color: #111111;
+  --transparency-focus-color: rgba(17, 17, 17, 0.12);
+  --base-hover-color: #707072;
+  --title-font-size: 1.75rem;
+  --title-font-weight: 500;
+  --button-border-radius: 999px;
+  --input-border-radius: 8px;
+  --border-radius-outer: 0px;
+  --box-border-width: 0px;
+  --logo-height: 0px;
+  --page-background-color: #ffffff;
+  background: #ffffff !important;
+  font-family: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.kinetik * {
+  font-family: inherit;
+}
+
+/* Header with the KINETIK logo (added by the page template) */
+.kinetik-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+  z-index: 2;
+}
+
+.kinetik-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #111111;
+  text-decoration: none;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.kinetik-back {
+  color: #707072;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.kinetik-back:hover {
+  color: #111111;
+  text-decoration: underline;
+}
+
+.kinetik-legal {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px 20px 28px;
+  font-size: 12px;
+  color: #707072;
+}
+
+/* Auth0's card: no box, full width up to 460px, left-aligned like ACUL */
+body.kinetik main._widget {
+  padding-top: 72px;
+  padding-bottom: 80px;
+}
+
+body.kinetik ._prompt-box-outer {
+  box-shadow: none !important;
+  border: 0 !important;
+  width: 100% !important;
+  max-width: 460px !important;
+}
+
+body.kinetik #prompt-logo-center,
+body.kinetik #custom-prompt-logo {
+  display: none !important;
+}
+
+body.kinetik #screen-header {
+  text-align: left;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+body.kinetik #screen-header h1 {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+body.kinetik input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]) {
+  min-height: 56px;
+  font-size: 16px;
+}
+
+body.kinetik button[type="submit"],
+body.kinetik ._button-primary,
+body.kinetik button[data-action-button-primary="true"] {
+  min-height: 52px;
+  font-weight: 500;
+  font-size: 16px;
+}
+
+body.kinetik a {
+  text-decoration: underline;
+}
