@@ -74,7 +74,8 @@ flag parameter. The docs show `{ value }` entries, but the live tenant sends pla
 | --- | --- | --- | --- |
 | `exp_sdxjEf9YL9KkeS2C3v5gSA` KINETIK passkey first (by device) | `flg_aS2MNmT8FE2JWQTSLCvoHT` (`passkey_first`) | Segment "KINETIK on phones" (`seg_g45cttUh7tfpAbU1ivKoTY`, client + `device_type: mobile`) gets B; everyone else falls back to A | completed 2026-11-22 |
 | `exp_gsPF1J4G1zXMsw3wAEBFgb` KINETIK passkeys by country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK in the UK" (`seg_wnGqDTM5uME1Rkv4KZDXZQ`, client + `country: GB`) gets "With passkeys" (control); everyone else falls back to "Without passkeys" | completed 2026-11-23 |
-| `exp_kBxn3AJ7EbVFoXUyg3Nk73` KINETIK passkeys by shopping country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK shopping in the UK" (`seg_wpGqHNkpvLphjxsfomtwfc`): `anonymous_session_metadata.shop_country` = GB, **or** IP country GB when the shopper left the footer picker on Automatic. Everyone else: "Without passkeys" | **active** since 2026-11-23 |
+| `exp_kBxn3AJ7EbVFoXUyg3Nk73` KINETIK passkeys by shopping country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK shopping in the UK" (`seg_wpGqHNkpvLphjxsfomtwfc`): `anonymous_session_metadata.shop_country` = GB, **or** IP country GB when the shopper left the footer picker on Automatic. Everyone else: "Without passkeys" | completed 2026-11-24 |
+| `exp_qva9EvsXtJRtKfLjq1SXff` KINETIK passkeys by shop country | `flg_g6q4xZ1GuBX5CfgZtHno3U` (`show_passkeys`) | Segment "KINETIK shop country UK" (`seg_sCxvknXZ64cGjqkUpbh1st`): `anonymous_session_metadata.shop_country` = GB; IP country GB only when the session has no `shop_country`. Everyone else: "Without passkeys" | **active** since 2026-11-24 |
 | KINETIK passkey prompt timing (Exp 1) | `flg_a0_managed_passkey_enrollment` (Auth0-managed) | see HANDOVER.md | not created |
 
 Segment `seg_tZouhVqdez8ThL2MagzQg2` ("KINETIK Store app") matches the KINETIK
@@ -103,3 +104,17 @@ reaching `/authorize`, so test on `kinetik.mmatias.co.uk`, not the vercel.app
 URL. A running experiment freezes its segments: to change a rule, complete the
 experiment and start a new one. `node preview/country.cjs [store-url]` checks
 Automatic, UK and US end to end.
+
+**Since 2026-11-24 the guest session always has `shop_country`:** the picked
+country, or the country from `/api/geo` (Vercel's `x-vercel-ip-country`) while
+the picker is on Automatic (shown as "Automatic (United Kingdom)"). Sign In and
+Join write it before redirecting. `kinetik-store-zeta.vercel.app` now 308s to
+`kinetik.mmatias.co.uk` (route in `scripts/build-vercel.mjs`).
+
+**Bug fixed the same day** (`src/client/anonymous.ts`): a guest-session update
+cancelled by navigation (Sign In right after changing country) used to wipe the
+stored session while Auth0's `auth0_anon` cookie kept the old one, so the login
+kept the old country. Only an Auth0 rejection resets the session now, and the
+reset carries the metadata over. Auth0 accepts superseded session tokens, but
+rejects metadata updates without one ("metadata updates require a matching
+session_token") and rate-limits `/anonymous/token` (429) under rapid testing.
