@@ -52,6 +52,13 @@ interface TokenResponse {
   readonly anon_transfer_token?: string
 }
 
+/** Auth0 answered the anonymous-session request with an error status. */
+class AnonymousSessionError extends Error {
+  constructor(readonly status: number) {
+    super(`Anonymous session request failed (${status})`)
+  }
+}
+
 const load = (): StoredSession | undefined => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -107,7 +114,7 @@ export function createGuestSessions(config: GuestSessionConfig) {
       credentials: config.transfer === "cookie" ? "include" : "omit",
       body: JSON.stringify({ client_id: config.clientId, ...body })
     })
-    if (!response.ok) throw new Error(`Anonymous session request failed (${response.status})`)
+    if (!response.ok) throw new AnonymousSessionError(response.status)
     return (await response.json()) as TokenResponse
   }
 
@@ -129,8 +136,13 @@ export function createGuestSessions(config: GuestSessionConfig) {
     publish()
   }
 
+  const start = async () => apply(await request({ audience: config.audience, scope: config.scope }), {})
+
   /** Starts a new session, or continues the stored one, and returns an access token. */
   const issue = async (extra: Record<string, unknown> = {}, metadata = current?.metadata ?? {}) => {
+    const wantsMetadata = "metadata" in extra
+    // Metadata can only be written to an existing session.
+    if (!current?.sessionToken && wantsMetadata) await start()
     const continuing = current?.sessionToken
     try {
       apply(
@@ -143,11 +155,19 @@ export function createGuestSessions(config: GuestSessionConfig) {
         metadata
       )
     } catch (error) {
-      if (!continuing) throw error
-      // The stored session is no longer valid: start a fresh one.
+      // Only a rejection of the session itself means it is gone. Network
+      // errors (including requests cancelled because the page navigated away,
+      // e.g. on Sign In) must not wipe it: Auth0's auth0_anon cookie still
+      // points at this session, and dropping it here left the cookie stale.
+      if (!continuing || !(error instanceof AnonymousSessionError) || error.status >= 500 || error.status === 429) throw error
       current = undefined
       save(undefined)
-      apply(await request({ audience: config.audience, scope: config.scope }), {})
+      await start()
+      // Re-apply everything we knew (e.g. shop_country) to the new session.
+      const carried = { ...metadata }
+      if (Object.keys(carried).length > 0) {
+        apply(await request({ audience: config.audience, scope: config.scope, session_token: current!.sessionToken, metadata: carried }), carried)
+      }
     }
     return current?.accessToken
   }
