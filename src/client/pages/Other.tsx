@@ -1,5 +1,6 @@
 import { useAtomValue } from "@effect/atom-react"
 import { AsyncResult } from "effect/reactivity"
+import { useEffect, useState } from "react"
 import { Link, useParams, useSearchParams } from "react-router"
 import type { Order } from "../../shared/Domain.ts"
 import { OrderId } from "../../shared/Domain.ts"
@@ -147,7 +148,45 @@ export function AccountPage() {
       </div>
     )
   }
-  return auth.isAuthenticated && auth.user ? <MemberAccount user={auth.user} /> : <JoinOrSignIn />
+  return auth.isAuthenticated && auth.user ? <MemberAccount user={auth.user} /> : <GoToSignIn />
+}
+
+const AUTO_SIGN_IN_KEY = "kinetik.autoSignIn"
+
+/**
+ * Signed-out visitors go straight to the Auth0 login ("Enter your email to
+ * join us or sign in"), like large sportswear stores, instead of an extra
+ * page. If we sent them there in the last minute and they came back without
+ * signing in (cancelled, or an error), show the Join / Sign In page instead
+ * so there is no redirect loop.
+ */
+function GoToSignIn() {
+  const [params] = useSearchParams()
+  const { signIn } = useAuthActions()
+  const returnTo = params.get("from") === "checkout" ? "/checkout" : "/account"
+  const [fallback] = useState(() => {
+    try {
+      const last = Number(sessionStorage.getItem(AUTO_SIGN_IN_KEY) || 0)
+      return Date.now() - last < 60_000 || params.has("error")
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    if (fallback) return
+    try {
+      sessionStorage.setItem(AUTO_SIGN_IN_KEY, String(Date.now()))
+    } catch {
+      // Storage blocked: still go; the error check above prevents loops.
+    }
+    signIn(returnTo)
+  }, [fallback])
+  if (fallback) return <JoinOrSignIn />
+  return (
+    <div className="container page">
+      <Spinner label="Taking you to sign in" />
+    </div>
+  )
 }
 
 function JoinOrSignIn() {

@@ -5,6 +5,7 @@ import { Photo } from "../components/Photo.tsx"
 import { AsyncView, Carousel, ProductCarousel } from "../components/ui.tsx"
 import type { PhotoName } from "../photos.ts"
 import { productsAtom, sportsAtom } from "../state.ts"
+import { authAtom, useAuthActions } from "../auth.tsx"
 
 export const sportPhoto: Record<SportId, PhotoName> = {
   running: "sport-running",
@@ -111,11 +112,25 @@ export function HomePage() {
             <p>Sign up for free. Get member-only products, early access to drops and free delivery on every order.</p>
           </div>
           <div className="hero-actions">
-            <Link to="/account" className="button button-light">Join Us</Link>
-            <Link to="/account" className="button button-outline-light">Sign In</Link>
+            <MemberButtons />
           </div>
         </div>
       </section>
     </div>
+  )
+}
+
+/** Straight to the KINETIK login: Join opens the join screen, Sign In the email screen. */
+function MemberButtons() {
+  const auth = useAtomValue(authAtom)
+  const { join, signIn } = useAuthActions()
+  if (auth.isAuthenticated) {
+    return <Link to="/account" className="button button-light">Your Account</Link>
+  }
+  return (
+    <>
+      <button type="button" className="button button-light" onClick={() => join("/account")}>Join Us</button>
+      <button type="button" className="button button-outline-light" onClick={() => signIn("/account")}>Sign In</button>
+    </>
   )
 }
