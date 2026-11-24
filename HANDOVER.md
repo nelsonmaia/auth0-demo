@@ -260,7 +260,30 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   through the MCP `create_deployment` gitSource; it still has no automatic Git
   deploys.
 
-### Management API access and security cleanup (still pending, user action)
+
+### Email provider (Resend)
+
+- Since 2026-11-24 the tenant sends email through **Resend over SMTP**
+  (`smtp.resend.com:465`, user `resend`), from
+  `no-reply@mail.mmatias.co.uk`. This is tenant-wide (all apps).
+- Resend domain `mail.mmatias.co.uk` (EU, eu-west-1), verified; receiving off.
+  DNS at Squarespace (name servers `ns-cloud-a*.googledomains.com`, so Resend
+  shows "Google Cloud DNS" and offers no Auto configure): TXT
+  `resend._domainkey.mail` (DKIM), MX + TXT `send.mail` (SPF), CNAME
+  `rsend.mail`, TXT `_dmarc.mail` = `v=DMARC1; p=none;`. The root domain's
+  Google Workspace MX records are untouched.
+- Auth0 uses the Resend API key "Auth0 SMTP (KINETIK)": sending only,
+  restricted to that domain. A domain-restricted key returns 550 until the
+  domain is fully verified.
+- Previous provider (Mailtrap sandbox, no real delivery):
+  `sandbox.smtp.mailtrap.io:587`, sender `nelson@jp.com`. Credentials not
+  kept here.
+- Verified: a KINETIK sign-in code ("Verify your identity") reached a Gmail
+  inbox with status delivered in Resend.
+- SMS: the tenant's phone provider is Twilio (Messaging Service with an
+  alphanumeric sender) but sends fail until the Twilio account's compliance
+  profile (Trust Hub) is approved.
+\n### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their
   personal "Default" cloud environment** for host `nelson.jp.auth0.com`. The
