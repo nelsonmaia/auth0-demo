@@ -132,7 +132,6 @@ export function loginId(): HTMLElement {
       f,
       google ? h("div", { class: "k-stack" }, googleButton(() => sdk.federatedLogin({ connection: google.name }))) : null,
       links(
-        sdk.transaction.isSignupEnabled ? ["New to KINETIK? Join us", sdk.screen.signupLink] : null,
         sdk.transaction.isForgotPasswordEnabled ? ["Forgot password?", sdk.screen.resetPasswordLink] : null,
       ),
     )
@@ -153,7 +152,6 @@ export function loginId(): HTMLElement {
         )
       : null,
     links(
-      sdk.transaction.isSignupEnabled ? ["New to KINETIK? Join us", sdk.screen.signupLink] : null,
       sdk.transaction.isForgotPasswordEnabled ? ["Forgot password?", sdk.screen.resetPasswordLink] : null,
     ),
   )
@@ -194,6 +192,12 @@ export function loginPassword(): HTMLElement {
     ),
     google ? divider() : null,
     google ? googleButton(() => sdk.federatedLogin({ connection: google.name })) : null,
+    // The only screen that offers Join: the email and code screens rely on
+    // identifier-first (a new email continues to sign-up), but here someone
+    // without an account would otherwise be stuck at a password prompt.
+    sdk.transaction.isSignupEnabled && sdk.screen.signupLink
+      ? h("p", { class: "k-join" }, "New to KINETIK? ", h("a", { href: sdk.screen.signupLink }, "Join us"))
+      : null,
   )
 }
 

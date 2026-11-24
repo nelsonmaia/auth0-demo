@@ -28,6 +28,11 @@ import {
 export class SystemApi extends HttpApiGroup.make("system", { topLevel: true }).add(
   HttpApiEndpoint.get("health", "/health", {
     success: Schema.Struct({ status: Schema.Literal("ok"), service: Schema.String })
+  }),
+  // The visitor's country from the hosting platform's IP lookup (ISO 3166-1
+  // alpha-2, e.g. "GB"), or null when unknown (local dev).
+  HttpApiEndpoint.get("geo", "/geo", {
+    success: Schema.Struct({ country: Schema.NullOr(Schema.String) })
   })
 ) {}
 

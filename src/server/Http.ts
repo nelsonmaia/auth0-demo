@@ -1,4 +1,5 @@
 import { Effect, Layer } from "effect"
+import { HttpServerRequest } from "effect/http"
 import { HttpApiBuilder, HttpApiScalar } from "effect/http-api"
 import { StoreApi } from "../shared/Api.ts"
 import { CurrentMember, Forbidden, isGuest, Scopes } from "../shared/Auth.ts"
@@ -11,7 +12,14 @@ const SystemHandlers = HttpApiBuilder.group(
   "system",
   Effect.fn(function*(handlers) {
     return handlers.handleAll({
-      health: () => Effect.succeed({ status: "ok" as const, service: "kinetik-store" })
+      health: () => Effect.succeed({ status: "ok" as const, service: "kinetik-store" }),
+      geo: () =>
+        Effect.gen(function*() {
+          const request = yield* HttpServerRequest.HttpServerRequest
+          const raw = request.headers["x-vercel-ip-country"]
+          const country = typeof raw === "string" && /^[A-Z]{2}$/.test(raw) ? raw : null
+          return { country }
+        })
     })
   })
 )

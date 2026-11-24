@@ -5,8 +5,9 @@ import { FREE_DELIVERY_THRESHOLD } from "../../shared/Pricing.ts"
 import { LogoMark, ProductArt } from "../art/ProductArt.tsx"
 import { authAtom, guestSessions, useAuthActions } from "../auth.tsx"
 import { knownEmailAtom } from "../knownEmail.ts"
+import { SHOP_COUNTRIES, countryName, effectiveCountry, shopCountryAtom, useDetectedCountry } from "../geo.ts"
 import { formatMoney } from "../format.ts"
-import { SHOP_COUNTRIES, cartCountAtom, favouritesAtom, productsAtom, shopCountryAtom, toastAtom } from "../state.ts"
+import { cartCountAtom, favouritesAtom, productsAtom, toastAtom } from "../state.ts"
 import { BagIcon, CheckIcon, ChevronRight, CloseIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "./Icons.tsx"
 import { AsyncView, Price } from "./ui.tsx"
 
@@ -464,6 +465,7 @@ function AddedToBag() {
 function CountryPicker() {
   const [country, setCountry] = useAtom(shopCountryAtom)
   const auth = useAtomValue(authAtom)
+  const detected = useDetectedCountry()
   return (
     <label className="country-picker">
       <span aria-hidden="true">🌐</span>
@@ -473,11 +475,15 @@ function CountryPicker() {
         onChange={(e) => {
           const next = e.target.value as typeof country
           setCountry(next)
-          if (!auth.isAuthenticated) guestSessions.setMetadata({ shop_country: next }).catch(() => undefined)
+          if (!auth.isAuthenticated) {
+            guestSessions.setMetadata({ shop_country: effectiveCountry(next, detected) }).catch(() => undefined)
+          }
         }}
       >
         {SHOP_COUNTRIES.map(([code, name]) => (
-          <option key={code} value={code}>{name}</option>
+          <option key={code} value={code}>
+            {code === "auto" ? (detected ? `Automatic (${countryName(detected)})` : name) : name}
+          </option>
         ))}
       </select>
     </label>

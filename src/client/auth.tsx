@@ -9,6 +9,7 @@ import { useLocation } from "react-router"
 import { Authorization, Scopes } from "../shared/Auth.ts"
 import { createGuestSessions, type GuestInfo, type TransferMode } from "./anonymous.ts"
 import { knownEmailAtom } from "./knownEmail.ts"
+import { detectCountry, effectiveCountry, shopCountryAtom } from "./geo.ts"
 
 /**
  * Public Auth0 settings (none of these are secrets). Sign-in goes through the
@@ -126,8 +127,15 @@ export function useAuthActions() {
   const here = location.pathname + location.search
 
   const knownEmail = useAtomValue(knownEmailAtom)
+  const shopCountry = useAtomValue(shopCountryAtom)
 
   const login = async (returnTo: string, extra: Record<string, string> = {}) => {
+    // Make sure the guest session carries the shopping country before Auth0
+    // reads it (Experiment Center segment); skipped when already up to date.
+    if (guestSessions.current()) {
+      const country = effectiveCountry(shopCountry, await detectCountry())
+      await guestSessions.setMetadata({ shop_country: country }).catch(() => undefined)
+    }
     const ticket = await guestSessions.transferTicket()
     return loginWithRedirect({
       appState: { returnTo },

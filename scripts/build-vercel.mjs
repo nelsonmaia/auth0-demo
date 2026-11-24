@@ -50,6 +50,15 @@ await writeFile(
     {
       version: 3,
       routes: [
+        // Always use the friendly domain: the vercel.app address is a different
+        // site from the Auth0 domain, so browsers that block third-party
+        // cookies drop the guest session there (country picker, guest orders).
+        {
+          src: "^/(.*)$",
+          has: [{ type: "host", value: "kinetik-store-zeta.vercel.app" }],
+          status: 308,
+          headers: { Location: "https://kinetik.mmatias.co.uk/$1" }
+        },
         {
           src: "^/assets/(.*)$",
           headers: { "cache-control": "public, max-age=31536000, immutable" },

@@ -508,3 +508,17 @@ body.kinetik {
   letter-spacing: 0.2em;
   font-variant-numeric: tabular-nums;
 }
+
+/* "New to KINETIK? Join us" on the password page only */
+.k-join {
+  margin-top: 28px !important;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: var(--muted);
+}
+
+.k-join a {
+  color: var(--text);
+  font-weight: 500;
+}
