@@ -46,6 +46,21 @@ function flag(experiment: { config: Record<string, unknown> } | null | undefined
   return entry
 }
 
+/**
+ * Phone numbers for Auth0 must be in international format (+447700900123).
+ * Accepts spaces, dashes and brackets; a UK mobile typed as 07… becomes +447….
+ * Returns undefined when the value doesn't look like a phone number.
+ */
+function toE164(value: string): string | undefined {
+  const compact = value.replace(/[\s().-]/g, "")
+  if (/^\+\d{8,15}$/.test(compact)) return compact
+  if (/^00\d{8,15}$/.test(compact)) return "+" + compact.slice(2)
+  if (/^07\d{9}$/.test(compact)) return "+44" + compact.slice(1)
+  return undefined
+}
+
+const looksLikePhone = (value: string) => !value.includes("@") && /^[+\d][\d\s().-]{6,}$/.test(value.trim())
+
 function raw(data: FormData, key: string): string {
   const v = data.get(key)
   return typeof v === "string" ? v : ""
@@ -79,7 +94,8 @@ export function loginId(): HTMLElement {
   const errors = sdk.getErrors()
   const allowed = sdk.getLoginIdentifiers() ?? ["email"]
   const emailOnly = allowed.length === 1 && allowed[0] === "email"
-  const label = emailOnly ? "Email" : allowed.includes("email") ? "Email or username" : "Username"
+  const phoneAllowed = (allowed as ReadonlyArray<string>).includes("phone")
+  const label = emailOnly ? "Email" : phoneAllowed ? "Email or phone number" : allowed.includes("email") ? "Email or username" : "Username"
   // A retry keeps what was typed; otherwise use the email the store passed as
   // login_hint (news sign-up or guest checkout).
   const hint = sdk.untrustedData.authorizationParams?.login_hint
@@ -90,6 +106,7 @@ export function loginId(): HTMLElement {
     name: "username",
     label,
     type: emailOnly ? "email" : "text",
+    ...(phoneAllowed ? { hint: "For a phone number, include the country code, e.g. +44 7700 900123." } : {}),
     value: prefill,
     autocomplete: "username webauthn",
     error: fieldError(errors, "username"),
@@ -112,7 +129,19 @@ export function loginId(): HTMLElement {
       cap.el,
       passkeyFirst ? h("button", { type: "submit", class: "k-btn k-btn-outline" }, "Continue with Email") : primaryButton("Continue"),
     ],
-    (data) => sdk.login({ username: str(data, "username"), captcha: cap.value() }),
+    async (data) => {
+      const value = str(data, "username")
+      if (phoneAllowed && looksLikePhone(value)) {
+        const phone = toE164(value)
+        if (!phone) {
+          id.showError("Add your country code, e.g. +44 7700 900123.")
+          throw new Error("phone without country code")
+        }
+        await sdk.login({ username: phone, identifierType: "phone", captcha: cap.value() })
+        return
+      }
+      await sdk.login({ username: value, captcha: cap.value() })
+    },
   )
 
   if (passkeys && sdk.transaction.showPasskeyAutofill) sdk.registerPasskeyAutofill("k-username").catch(() => {})
@@ -232,14 +261,38 @@ export function signupId(): HTMLElement {
   })
   const cap = captcha(sdk.screen, fieldError(errors, "captcha"))
   const google = googleConnection(sdk.transaction.alternateConnections)
+  const ids = [...(sdk.transaction.requiredIdentifiers ?? []), ...(sdk.transaction.optionalIdentifiers ?? [])] as ReadonlyArray<string>
+  const phoneRequired = (sdk.transaction.requiredIdentifiers ?? [] as ReadonlyArray<string>).includes("phone")
+  const phone = ids.includes("phone")
+    ? field({
+        name: "phone",
+        label: phoneRequired ? "Mobile number" : "Mobile number (optional)",
+        type: "tel",
+        autocomplete: "tel",
+        required: phoneRequired,
+        error: fieldError(errors, "phone") ?? fieldError(errors, "phone_number"),
+        hint: "Lets you sign in with a text code. Include the country code, e.g. +44 7700 900123.",
+      })
+    : null
 
   return h(
     "div",
     {},
     ...title("Become a KINETIK Member", "Create your profile to get free standard delivery and member checkout."),
     form(
-      [errorBanner(errors, ["email", "captcha"]), email.el, hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null, cap.el, primaryButton("Continue")],
-      (data) => sdk.signup({ email: str(data, "email"), captcha: cap.value() }),
+      [errorBanner(errors, ["email", "phone", "phone_number", "captcha"]), email.el, hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null, phone?.el ?? null, cap.el, primaryButton("Continue")],
+      async (data) => {
+        const typed = str(data, "phone")
+        let phoneE164: string | undefined
+        if (typed) {
+          phoneE164 = toE164(typed)
+          if (!phoneE164) {
+            phone?.showError("Add your country code, e.g. +44 7700 900123.")
+            throw new Error("phone without country code")
+          }
+        }
+        await sdk.signup({ email: str(data, "email"), ...(phoneE164 ? { phone: phoneE164 } : {}), captcha: cap.value() })
+      },
     ),
     google ? divider() : null,
     google ? googleButton(() => sdk.federatedSignup({ connection: google.name }), "Join with Google") : null,

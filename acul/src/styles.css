@@ -543,3 +543,14 @@ body.kinetik {
   border-top-color: var(--text);
   animation: k-spin 0.7s linear infinite;
 }
+
+.k-field-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.k-field-error[hidden] {
+  display: none;
+}

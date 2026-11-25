@@ -62,10 +62,12 @@ export interface FieldOptions {
   required?: boolean
   readonly?: boolean
   inputmode?: string
+  /** Small help text under the field. */
+  hint?: string
 }
 
 /** Floating-label input, the same look as the store's checkout fields. */
-export function field(o: FieldOptions): { el: HTMLElement; input: HTMLInputElement } {
+export function field(o: FieldOptions): { el: HTMLElement; input: HTMLInputElement; showError: (message: string) => void } {
   const id = `k-${o.name}`
   const input = h("input", {
     id,
@@ -94,8 +96,18 @@ export function field(o: FieldOptions): { el: HTMLElement; input: HTMLInputEleme
     children.push(toggle)
   }
   const wrap = h("label", { class: `k-field${o.error ? " has-error" : ""}`, for: id }, ...children)
-  const el = h("div", {}, wrap, o.error ? h("span", { class: "k-field-error", id: `${id}-err` }, o.error) : null)
-  return { el, input }
+  const errorEl = h("span", { class: "k-field-error", id: `${id}-err`, hidden: !o.error }, o.error ?? "")
+  const el = h("div", {}, wrap, errorEl, o.hint ? h("span", { class: "k-field-hint" }, o.hint) : null)
+  /** Shows an error under the field (client-side checks). */
+  const showError = (message: string) => {
+    wrap.classList.add("has-error")
+    errorEl.textContent = message
+    errorEl.hidden = false
+    input.setAttribute("aria-invalid", "true")
+    input.setAttribute("aria-describedby", `${id}-err`)
+    input.focus()
+  }
+  return { el, input, showError }
 }
 
 /** Read-only identifier row with an "Edit" link, used on the second step. */
