@@ -312,6 +312,14 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   but then fails with "Invalid user for otp auth ticket". Demo member
   `phone.demo+demo@okta.com` (`auth0|6b071f99d128a10b875f2ed2`) has
   +447468341234 for testing.
+- New numbers are steered to Join (login page only, no Auth0 settings
+  changed): the phone code screen links "No KINETIK account for this number
+  yet? Join with your email", and if Auth0 returns a no-such-user error the
+  screen becomes that message. The link goes to the store's
+  `/account?join=1`, which opens Auth0's Join page (Auth0 won't switch to
+  Join from the code screen); the login page keeps the number in
+  sessionStorage (`kinetik_join_phone`) and fills it in on Join. Verified live
+  2026-11-25 with +44 7700 900123.
 
 ### Implicit sign-up: no confirmation page, no password step (2026-11-25)
 
