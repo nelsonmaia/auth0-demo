@@ -51,6 +51,13 @@ const cases = {
   "login-password-otp": base("login-password", { screen: { links: { signup: "#s", reset_password: "#r", edit_identifier: "#e" }, data: { username: "jane@example.com", show_switch_to_otp_button: true } } }),
   "hint-login-id": base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
   "hint-signup-id": base("signup-id", { screen: { links: { login: "#login" } }, untrusted_data: { authorization_params: { login_hint: "jane.runner@example.com" } } }),
+  "phone-challenge": base("phone-identifier-challenge", { screen: { links: {}, data: { phone: "+447468349999", messageType: "text" } } }),
+  "phone-no-account": base("phone-identifier-challenge", { screen: { links: {}, data: { phone: "+447468349999", messageType: "text" } }, transaction: { errors: [{ code: "invalid-user", message: "Invalid user for otp auth ticket" }] } }),
+  "phone-join": (() => {
+    const c = base("signup-id", { screen: { links: { login: "#login" } } })
+    c.transaction.connection.options.attributes.phone = { identifier_active: true, signup_status: "optional" }
+    return c
+  })(),
   "exp-no-passkeys": (() => {
     const c = base("login-id", { screen: { links: { signup: "#signup", reset_password: "#reset" } } })
     c.transaction.connection.options.authentication_methods.passkey.enabled = true
@@ -80,7 +87,7 @@ const cases = {
       await page.route("https://acul.test/", (r) => r.fulfill({ contentType: "text/html", body:
         `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap">
-        <style>${css}</style><script>window.universal_login_context=${JSON.stringify(ctx)}</script></head><body></body></html>` }))
+        <style>${css}</style><script>${name.startsWith("phone-") ? 'sessionStorage.setItem("kinetik_join_phone","+447468349999");' : ""}window.universal_login_context=${JSON.stringify(ctx)}</script></head><body></body></html>` }))
       await page.goto("https://acul.test/")
       await page.addScriptTag({ content: js, type: "module" })
       await page.waitForSelector(".k-card")

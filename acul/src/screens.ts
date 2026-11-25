@@ -87,6 +87,28 @@ function passwordRules(
 }
 
 /** Under the passkey button: someone without a passkey isn't stuck. */
+// A phone number with no account can't create one on its own (the connection
+// requires an email at sign-up), so the phone code screen offers Join, and
+// the Join page fills in the number typed on the first screen.
+const JOIN_PHONE_KEY = "kinetik_join_phone"
+function rememberJoinPhone(phone: string | null): void {
+  try {
+    if (phone) sessionStorage.setItem(JOIN_PHONE_KEY, phone)
+    else sessionStorage.removeItem(JOIN_PHONE_KEY)
+  } catch {}
+}
+function joinPhone(): string | undefined {
+  try {
+    return sessionStorage.getItem(JOIN_PHONE_KEY) ?? undefined
+  } catch {
+    return undefined
+  }
+}
+const signupUrl = (state: string) => `/u/signup?state=${encodeURIComponent(state)}`
+/** Auth0's "no such user" errors, as opposed to a wrong or expired code. */
+const isNoAccountError = (e: { code: string; message: string }) =>
+  /user/i.test(e.code) || /invalid user|user (does not|doesn't) exist|no (such )?user|not found/i.test(e.message)
+
 const NO_PASSKEY_HINT = "No passkey yet? Continue with your email — we'll offer to set one up after you sign in."
 
 // ---------------------------------------------------------------------------
@@ -127,6 +149,9 @@ export function loginId(): HTMLElement {
   const f = form(
     [
       errorBanner(errors, ["username", "captcha"]),
+      errors.some(isNoAccountError) && joinPhone()
+        ? h("p", { class: "k-hint-left" }, "No KINETIK account for this number yet. ", h("a", { href: sdk.screen.signupLink ?? signupUrl(sdk.transaction.state) }, "Join with your email"))
+        : null,
       id.el,
       hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null,
       cap.el,
@@ -140,9 +165,11 @@ export function loginId(): HTMLElement {
           id.showError("Add your country code, e.g. +44 7700 900123.")
           throw new Error("phone without country code")
         }
+        rememberJoinPhone(phone)
         await sdk.login({ username: phone, identifierType: "phone", captcha: cap.value() })
         return
       }
+      rememberJoinPhone(null)
       await sdk.login({ username: value, captcha: cap.value() })
     },
   )
@@ -274,6 +301,7 @@ export function signupId(): HTMLElement {
         label: phoneRequired ? "Mobile number" : "Mobile number (optional)",
         type: "tel",
         autocomplete: "tel",
+        value: (sdk.untrustedData.submittedFormData?.phone as string | undefined) ?? joinPhone(),
         required: phoneRequired,
         error: fieldError(errors, "phone") ?? fieldError(errors, "phone_number"),
         hint: "Lets you sign in with a text code. Include the country code, e.g. +44 7700 900123.",
@@ -283,7 +311,12 @@ export function signupId(): HTMLElement {
   return h(
     "div",
     {},
-    ...title("Become a KINETIK Member", "Create your profile to get free standard delivery and member checkout."),
+    ...title(
+      "Become a KINETIK Member",
+      phone && joinPhone()
+        ? "Add your email to finish joining. You can then sign in with a text code to your number."
+        : "Create your profile to get free standard delivery and member checkout.",
+    ),
     form(
       [errorBanner(errors, ["email", "phone", "phone_number", "captcha"]), email.el, hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null, phone?.el ?? null, cap.el, primaryButton("Continue")],
       async (data) => {
@@ -577,10 +610,22 @@ export function phoneIdentifierChallenge(): HTMLElement {
   const sdk = new PhoneIdentifierChallenge()
   const phone = sdk.screen.data?.phone
   const voice = sdk.screen.data?.messageType === "voice"
+  const allErrors = sdk.getErrors()
+  const noAccount = allErrors.some(isNoAccountError)
+  const join = h("a", { href: signupUrl(sdk.transaction.state) }, "Join with your email")
+  if (noAccount) {
+    return h(
+      "div",
+      {},
+      ...title("No KINETIK account for this number yet", `${phone ?? "This number"} isn't linked to a member. Join with your email and we'll add the number, so next time a text code is all you need.`),
+      h("div", { class: "k-stack" }, h("a", { class: "k-btn k-btn-primary", href: signupUrl(sdk.transaction.state) }, "Join with your email")),
+      h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.returnToPrevious() } }, "Use a different number")),
+    )
+  }
   return codeScreen({
     title: voice ? "Answer your phone" : "Check your messages",
     sub: phone ? `We've sent a code to ${phone}. Enter it below to continue.` : "We've sent you a code. Enter it below to continue.",
-    errors: sdk.getErrors(),
+    errors: allErrors,
     submit: (code) => sdk.submitPhoneChallenge({ code }),
     resend: { manager: (o) => sdk.resendManager(o), limitReached: sdk.screen.data?.resendLimitReached },
     back: { label: "Use a different number", go: () => sdk.returnToPrevious() },
@@ -591,6 +636,7 @@ export function phoneIdentifierChallenge(): HTMLElement {
       sdk.screen.data?.showLinkSms && voice
         ? h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.switchToText() } }, "Text me instead"))
         : null,
+      h("p", { class: "k-join" }, "No KINETIK account for this number yet? ", join),
     ],
   })
 }
