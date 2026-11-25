@@ -1,0 +1,10 @@
+# Optional alternative to Vercel: one-click deploy on Render (Blueprint).
+# Runs the same Effect server with `npm start`, serving the UI and the API.
+services:
+  - type: web
+    name: kinetik-store
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health

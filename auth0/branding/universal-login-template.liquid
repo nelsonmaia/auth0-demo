@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+  {% assign resolved_dir = dir | default: "auto" %}
+  {% assign ikea_custom_form_apps = "ckeLWJD699AWzNRAA40MYaKs7CCGq7cb,72CBJSBponCaM7BogQrwLpxyuTChJa0v" | split: "," %}
+  {% assign use_ikea_custom_form = false %}
+  {% if prompt.name == "custom-form" and ikea_custom_form_apps contains application.id %}
+    {% assign use_ikea_custom_form = true %}
+  {% endif %}
+  {% comment %} KINETIK Store: KINETIK look on Auth0's standard pages and Forms {% endcomment %}
+  {% assign is_kinetik = false %}
+  {% if application.id == "9ixC3mOlyVKGIzefoa5A6SrcWe1szzn7" %}
+    {% assign is_kinetik = true %}
+  {% endif %}
+  <html lang="{{locale}}" dir="{{resolved_dir}}">
+
+  <head>
+    <title>{{prompt.screen.texts.pageTitle}}</title>
+    {% if use_ikea_custom_form %}
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <script>
+      window.universal_login_context = {
+        "client": {
+          "id": "WkdfgJHbOcxI3",
+          "name": "Ikea"
+        },
+        "prompt": { "name": "custom-form" },
+        "screen": {
+          "name": "custom-form",
+          "tenant": {
+            "name": "nelson"
+          },
+          "custom_domain": { "domain": "nelson.jp.mmatias.co.uk" },
+          "locale": "en"
+        },
+        "transaction": {
+          "state": "hKFo2SA3VHY1RnJWMkhFV0lEWmg"
+        }
+      };
+      window.auth0_form_id = window.location.pathname.split('/u/custom-prompt/')[1];
+    </script>
+    <link rel="stylesheet" href="https://fan8d1shexabo8ob.public.blob.vercel-storage.com/index-B-V2CXRd.css">
+    {% else %}
+      {%- auth0:head -%}
+      {% if is_kinetik %}
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,700;0,900;1,900&display=swap">
+      <link rel="stylesheet" href="https://kinetik-login.vercel.app/kinetik-standard.css">
+      {% endif %}
+    {% endif %}
+  </head>
+
+  <body class="_widget-auto-layout{% if is_kinetik %} kinetik{% endif %}">
+    {% if use_ikea_custom_form %}
+      <script src="https://fan8d1shexabo8ob.public.blob.vercel-storage.com/index-DA4PhKGr.js" defer></script>
+    {% elsif is_kinetik %}
+      <header class="kinetik-bar">
+        <a class="kinetik-logo" href="https://kinetik.mmatias.co.uk" aria-label="KINETIK">
+          <svg viewBox="0 0 100 100" width="34" height="34" aria-hidden="true"><path d="M14 74 L64 20 L58 46 L90 38 L38 90 L44 64 Z" fill="currentColor"/></svg>
+          <span>KINETIK</span>
+        </a>
+        <a class="kinetik-back" href="https://kinetik.mmatias.co.uk">Back to store</a>
+      </header>
+      {%- auth0:widget -%}
+      <p class="kinetik-legal">By continuing, you agree to KINETIK's Terms of Use and acknowledge the Privacy Policy. KINETIK is a demo store.</p>
+    {% else %}
+      {%- auth0:widget -%}
+    {% endif %}
+  </body>
+
+  </html>

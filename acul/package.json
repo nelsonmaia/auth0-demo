@@ -1,0 +1,21 @@
+{
+  "name": "kinetik-login",
+  "version": "1.0.0",
+  "description": "KINETIK-styled Auth0 Universal Login screens (Advanced Customizations)",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "build": "esbuild src/main.ts --bundle --minify --format=esm --target=es2020 --outfile=dist/kinetik-login.js && node scripts/finish.mjs"
+  },
+  "dependencies": {
+    "@auth0/auth0-acul-js": "1.11.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  }
+}
