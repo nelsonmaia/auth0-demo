@@ -307,6 +307,11 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   in only in the deployed copy; blank in git because the repo is public):
   prefix +44 7468 34 goes to the owner's phone. Redeploying from git clears
   them unless the secrets are set.
+- Phone sign-in needs an existing member with that `phone_number`: the
+  connection requires an email at sign-up, so an unknown number gets a code
+  but then fails with "Invalid user for otp auth ticket". Demo member
+  `phone.demo+demo@okta.com` (`auth0|6b071f99d128a10b875f2ed2`) has
+  +447468341234 for testing.
 
 ### Implicit sign-up: no confirmation page, no password step (2026-11-25)
 
