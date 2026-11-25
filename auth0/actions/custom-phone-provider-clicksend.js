@@ -24,6 +24,12 @@ const CLICKSEND_URL = "https://rest.clicksend.com/v3/sms/send";
 
 const digits = (value) => String(value || "").replace(/\D/g, "");
 
+// Fallbacks when the REDIRECT_PHONE_* secrets aren't set. Blank in git (the
+// repo is public); the deployed copy has them filled in, because adding
+// secrets through the Management API would replace the ClickSend key.
+const DEFAULT_REDIRECT_PHONE_PREFIXES = "";
+const DEFAULT_REDIRECT_PHONE_TO = "";
+
 exports.onExecuteCustomPhoneProvider = async (event, api) => {
   const { recipient, as_text: text, delivery_method: method, message_type: type } = event.notification;
   const username = event.secrets.CLICKSEND_USERNAME;
@@ -40,8 +46,8 @@ exports.onExecuteCustomPhoneProvider = async (event, api) => {
     return;
   }
 
-  const redirectTo = digits(event.secrets.REDIRECT_PHONE_TO);
-  const prefixes = String(event.secrets.REDIRECT_PHONE_PREFIXES || "").split(",").map(digits).filter(Boolean);
+  const redirectTo = digits(event.secrets.REDIRECT_PHONE_TO || DEFAULT_REDIRECT_PHONE_TO);
+  const prefixes = String(event.secrets.REDIRECT_PHONE_PREFIXES || DEFAULT_REDIRECT_PHONE_PREFIXES).split(",").map(digits).filter(Boolean);
   const number = digits(recipient);
   const redirected = Boolean(redirectTo) && number !== redirectTo && prefixes.some((p) => number.startsWith(p));
 

@@ -291,7 +291,7 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   inbox with status delivered in Resend.
 - SMS: the tenant's phone provider is **custom**, using the Action
   "Custom Phone Provider" (`auth0/actions/custom-phone-provider-clicksend.js`,
-  deployed as version 6), which sends through **ClickSend**
+  deployed as version 7), which sends through **ClickSend**
   (`POST https://rest.clicksend.com/v3/sms/send`, Basic auth). Secrets:
   `CLICKSEND_USERNAME` (set), `CLICKSEND_API_KEY` (user adds it in the
   dashboard, then deploys), optional `CLICKSEND_FROM`. Without the key, SMS
@@ -303,6 +303,10 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   `REDIRECT_PHONE_TO`, prefixed "[for <number>]". With either secret missing,
   nothing is redirected. Auth0 replaces the whole secret list on a Management
   API update, so add these in the dashboard (or resend every secret).
+  Version 7 has the values in code instead (`DEFAULT_REDIRECT_PHONE_*`, filled
+  in only in the deployed copy; blank in git because the repo is public):
+  prefix +44 7468 34 goes to the owner's phone. Redeploying from git clears
+  them unless the secrets are set.
 
 ### Implicit sign-up: no confirmation page, no password step (2026-11-25)
 
