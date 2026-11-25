@@ -9,6 +9,9 @@
  *   RESEND_API_KEY        Resend API key (sending access, domain mail.mmatias.co.uk)
  *   REDIRECT_ADDRESSES    comma-separated recipients to redirect,
  *                         e.g. "hazel.nutt@okta.com, other.persona@okta.com"
+ *   REDIRECT_PATTERNS     optional comma-separated tags; any address whose part
+ *                         before "@" contains one is redirected (default "+demo",
+ *                         e.g. hazel.nutt+demo@okta.com, ana+demo@gmail.com)
  *   REDIRECT_TO           where redirected emails go, e.g. a real inbox
  *   FROM_ADDRESS          optional, default "KINETIK <no-reply@mail.mmatias.co.uk>"
  *
@@ -33,7 +36,13 @@ exports.onExecuteCustomEmailProvider = async (event, api) => {
   }
 
   const redirectTo = String(event.secrets.REDIRECT_TO || "").trim();
-  const redirected = Boolean(redirectTo) && list(event.secrets.REDIRECT_ADDRESSES).includes(String(to).toLowerCase());
+  const recipient = String(to).toLowerCase();
+  const localPart = recipient.split("@")[0] || "";
+  const patterns = list(event.secrets.REDIRECT_PATTERNS ?? "+demo");
+  const redirected =
+    Boolean(redirectTo) &&
+    recipient !== redirectTo.toLowerCase() &&
+    (list(event.secrets.REDIRECT_ADDRESSES).includes(recipient) || patterns.some((tag) => localPart.includes(tag)));
 
   const payload = {
     from: event.secrets.FROM_ADDRESS || DEFAULT_FROM,

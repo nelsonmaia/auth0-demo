@@ -270,8 +270,10 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   Secrets: `RESEND_API_KEY`, `REDIRECT_ADDRESSES` (comma list, now
   `hazel.nutt@okta.com`), `REDIRECT_TO` (`nelson.matias@okta.com`), optional
   `FROM_ADDRESS`. Emails to a listed address go to `REDIRECT_TO` with
-  subject `[for <original>] …` and header `X-Original-To`. Edit the list in
-  the Action's secrets and deploy.
+  subject `[for <original>] …` and header `X-Original-To`. Since 2026-11-25 any
+  address whose part before "@" contains `+demo` (secret `REDIRECT_PATTERNS`,
+  comma-separated) is redirected too, e.g. `hazel.nutt+demo@okta.com`. Edit
+  the lists in the Action's secrets and deploy.
 - Before that (2026-11-24) it was Resend over SMTP (`smtp.resend.com:465`).
 - Resend domain `mail.mmatias.co.uk` (EU, eu-west-1), verified; receiving off.
   DNS at Squarespace (name servers `ns-cloud-a*.googledomains.com`, so Resend
