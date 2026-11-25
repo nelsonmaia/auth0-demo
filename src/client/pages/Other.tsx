@@ -162,9 +162,13 @@ const AUTO_SIGN_IN_KEY = "kinetik.autoSignIn"
  */
 function GoToSignIn() {
   const [params] = useSearchParams()
-  const { signIn } = useAuthActions()
+  const { signIn, join } = useAuthActions()
   const returnTo = params.get("from") === "checkout" ? "/checkout" : "/account"
+  // ?join=1 comes from the login page ("No KINETIK account for this number
+  // yet? Join with your email"): open Auth0's Join page straight away.
+  const joinNow = params.get("join") === "1"
   const [fallback] = useState(() => {
+    if (joinNow) return false
     try {
       const last = Number(sessionStorage.getItem(AUTO_SIGN_IN_KEY) || 0)
       return Date.now() - last < 60_000 || params.has("error")
@@ -179,7 +183,8 @@ function GoToSignIn() {
     } catch {
       // Storage blocked: still go; the error check above prevents loops.
     }
-    signIn(returnTo)
+    if (joinNow) join(returnTo)
+    else signIn(returnTo)
   }, [fallback])
   if (fallback) return <JoinOrSignIn />
   return (

@@ -104,7 +104,9 @@ function joinPhone(): string | undefined {
     return undefined
   }
 }
-const signupUrl = (state: string) => `/u/signup?state=${encodeURIComponent(state)}`
+// Auth0 won't switch to Join from the code screen, so start again from the
+// store, which opens Join (screen_hint=signup); the number stays in storage.
+const STORE_JOIN_URL = `${STORE_URL}/account?join=1`
 /** Auth0's "no such user" errors, as opposed to a wrong or expired code. */
 const isNoAccountError = (e: { code: string; message: string }) =>
   /user/i.test(e.code) || /invalid user|user (does not|doesn't) exist|no (such )?user|not found/i.test(e.message)
@@ -150,7 +152,7 @@ export function loginId(): HTMLElement {
     [
       errorBanner(errors, ["username", "captcha"]),
       errors.some(isNoAccountError) && joinPhone()
-        ? h("p", { class: "k-hint-left" }, "No KINETIK account for this number yet. ", h("a", { href: sdk.screen.signupLink ?? signupUrl(sdk.transaction.state) }, "Join with your email"))
+        ? h("p", { class: "k-hint-left" }, "No KINETIK account for this number yet. ", h("a", { href: sdk.screen.signupLink ?? STORE_JOIN_URL }, "Join with your email"))
         : null,
       id.el,
       hint && !submittedAgain ? h("p", { class: "k-hint-left" }, "We filled in the email you gave us. Not you? Just change it.") : null,
@@ -612,13 +614,13 @@ export function phoneIdentifierChallenge(): HTMLElement {
   const voice = sdk.screen.data?.messageType === "voice"
   const allErrors = sdk.getErrors()
   const noAccount = allErrors.some(isNoAccountError)
-  const join = h("a", { href: signupUrl(sdk.transaction.state) }, "Join with your email")
+  const join = h("a", { href: STORE_JOIN_URL }, "Join with your email")
   if (noAccount) {
     return h(
       "div",
       {},
       ...title("No KINETIK account for this number yet", `${phone ?? "This number"} isn't linked to a member. Join with your email and we'll add the number, so next time a text code is all you need.`),
-      h("div", { class: "k-stack" }, h("a", { class: "k-btn k-btn-primary", href: signupUrl(sdk.transaction.state) }, "Join with your email")),
+      h("div", { class: "k-stack" }, h("a", { class: "k-btn k-btn-primary", href: STORE_JOIN_URL }, "Join with your email")),
       h("p", { class: "k-links" }, h("a", { href: "#", onclick: (e: Event) => { e.preventDefault(); sdk.returnToPrevious() } }, "Use a different number")),
     )
   }
