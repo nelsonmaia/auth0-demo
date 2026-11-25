@@ -263,18 +263,25 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
 
 ### Email provider (Resend)
 
-- Since 2026-11-24 the tenant sends email through **Resend over SMTP**
-  (`smtp.resend.com:465`, user `resend`), from
-  `no-reply@mail.mmatias.co.uk`. This is tenant-wide (all apps).
+- Since 2026-11-25 the tenant's email provider is **custom**: the Action
+  "Custom Email Provider" (`auth0/actions/custom-email-provider-resend.js`)
+  sends every Auth0 email through Resend's API, from
+  `KINETIK <no-reply@mail.mmatias.co.uk>`. Tenant-wide (all apps).
+  Secrets: `RESEND_API_KEY`, `REDIRECT_ADDRESSES` (comma list, now
+  `hazel.nutt@okta.com`), `REDIRECT_TO` (`nelson.matias@okta.com`), optional
+  `FROM_ADDRESS`. Emails to a listed address go to `REDIRECT_TO` with
+  subject `[for <original>] …` and header `X-Original-To`. Edit the list in
+  the Action's secrets and deploy.
+- Before that (2026-11-24) it was Resend over SMTP (`smtp.resend.com:465`).
 - Resend domain `mail.mmatias.co.uk` (EU, eu-west-1), verified; receiving off.
   DNS at Squarespace (name servers `ns-cloud-a*.googledomains.com`, so Resend
   shows "Google Cloud DNS" and offers no Auto configure): TXT
   `resend._domainkey.mail` (DKIM), MX + TXT `send.mail` (SPF), CNAME
   `rsend.mail`, TXT `_dmarc.mail` = `v=DMARC1; p=none;`. The root domain's
   Google Workspace MX records are untouched.
-- Auth0 uses the Resend API key "Auth0 SMTP (KINETIK)": sending only,
-  restricted to that domain. A domain-restricted key returns 550 until the
-  domain is fully verified.
+- The Action uses the Resend key "Auth0 SMTP (KINETIK)" (sending only,
+  domain-restricted). A second key "Auth0 Action (KINETIK)" was created but its
+  token as displayed was invalid; it should be deleted.
 - Previous provider (Mailtrap sandbox, no real delivery):
   `sandbox.smtp.mailtrap.io:587`, sender `nelson@jp.com`. Credentials not
   kept here.
