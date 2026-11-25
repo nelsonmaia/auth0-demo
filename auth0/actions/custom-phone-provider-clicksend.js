@@ -10,11 +10,19 @@
  *   CLICKSEND_API_KEY   ClickSend API key (Dashboard → Developers → API Credentials)
  *   CLICKSEND_FROM      optional sender: an approved sender name (e.g. KINETIK)
  *                       or a dedicated number; omit to use ClickSend's shared numbers
+ *   REDIRECT_PHONE_PREFIXES  optional comma-separated E.164 prefixes; SMS for a
+ *                       number starting with one goes to REDIRECT_PHONE_TO instead
+ *                       (demo personas), e.g. "+44746834"
+ *   REDIRECT_PHONE_TO   where redirected SMS go, in E.164, e.g. "+447700900123"
+ *
+ * A redirected SMS starts with "[for <original number>]".
  *
  * API: POST https://rest.clicksend.com/v3/sms/send with HTTP Basic auth
  * (username:api_key). Voice delivery is not used (provider is text only).
  */
 const CLICKSEND_URL = "https://rest.clicksend.com/v3/sms/send";
+
+const digits = (value) => String(value || "").replace(/\D/g, "");
 
 exports.onExecuteCustomPhoneProvider = async (event, api) => {
   const { recipient, as_text: text, delivery_method: method, message_type: type } = event.notification;
@@ -32,10 +40,15 @@ exports.onExecuteCustomPhoneProvider = async (event, api) => {
     return;
   }
 
+  const redirectTo = digits(event.secrets.REDIRECT_PHONE_TO);
+  const prefixes = String(event.secrets.REDIRECT_PHONE_PREFIXES || "").split(",").map(digits).filter(Boolean);
+  const number = digits(recipient);
+  const redirected = Boolean(redirectTo) && number !== redirectTo && prefixes.some((p) => number.startsWith(p));
+
   const message = {
     source: "auth0",
-    to: recipient,
-    body: text,
+    to: redirected ? `+${redirectTo}` : recipient,
+    body: redirected ? `[for ${recipient}] ${text}` : text,
     ...(event.secrets.CLICKSEND_FROM ? { from: event.secrets.CLICKSEND_FROM } : {})
   };
 
@@ -58,7 +71,7 @@ exports.onExecuteCustomPhoneProvider = async (event, api) => {
   const body = await response.json().catch(() => ({}));
   const status = body?.data?.messages?.[0]?.status;
   if (response.ok && body.response_code === "SUCCESS" && status === "SUCCESS") {
-    console.log("ClickSend SMS queued", { type, message_id: body.data.messages[0].message_id });
+    console.log("ClickSend SMS queued", { type, redirected, message_id: body.data.messages[0].message_id });
     return;
   }
 

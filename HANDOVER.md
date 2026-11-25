@@ -291,12 +291,18 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   inbox with status delivered in Resend.
 - SMS: the tenant's phone provider is **custom**, using the Action
   "Custom Phone Provider" (`auth0/actions/custom-phone-provider-clicksend.js`,
-  deployed as version 4), which sends through **ClickSend**
+  deployed as version 6), which sends through **ClickSend**
   (`POST https://rest.clicksend.com/v3/sms/send`, Basic auth). Secrets:
   `CLICKSEND_USERNAME` (set), `CLICKSEND_API_KEY` (user adds it in the
   dashboard, then deploys), optional `CLICKSEND_FROM`. Without the key, SMS
   are dropped with a log line. Twilio was dropped: UK senders needed an
   approved Trust Hub compliance profile.
+- SMS redirect for demo personas (version 6): secrets
+  `REDIRECT_PHONE_PREFIXES` (comma-separated E.164 prefixes) and
+  `REDIRECT_PHONE_TO` (E.164). Numbers starting with a prefix get their SMS at
+  `REDIRECT_PHONE_TO`, prefixed "[for <number>]". With either secret missing,
+  nothing is redirected. Auth0 replaces the whole secret list on a Management
+  API update, so add these in the dashboard (or resend every secret).
 
 ### Implicit sign-up: no confirmation page, no password step (2026-11-25)
 
