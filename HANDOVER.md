@@ -280,9 +280,14 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   kept here.
 - Verified: a KINETIK sign-in code ("Verify your identity") reached a Gmail
   inbox with status delivered in Resend.
-- SMS: the tenant's phone provider is Twilio (Messaging Service with an
-  alphanumeric sender) but sends fail until the Twilio account's compliance
-  profile (Trust Hub) is approved.
+- SMS: the tenant's phone provider is **custom**, using the Action
+  "Custom Phone Provider" (`auth0/actions/custom-phone-provider-clicksend.js`,
+  deployed as version 4), which sends through **ClickSend**
+  (`POST https://rest.clicksend.com/v3/sms/send`, Basic auth). Secrets:
+  `CLICKSEND_USERNAME` (set), `CLICKSEND_API_KEY` (user adds it in the
+  dashboard, then deploys), optional `CLICKSEND_FROM`. Without the key, SMS
+  are dropped with a log line. Twilio was dropped: UK senders needed an
+  approved Trust Hub compliance profile.
 
 ### Implicit sign-up: no confirmation page, no password step (2026-11-25)
 
