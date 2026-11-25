@@ -284,6 +284,19 @@ Customizations (ACUL) with the store's look. Code is in `acul/` (see
   alphanumeric sender) but sends fail until the Twilio account's compliance
   profile (Trust Hub) is approved.
 
+### Passwordless sign-up (2026-11-25)
+
+- Database connection `Username-Password-Authentication`:
+  `authentication_methods.password.signup_behavior` changed from `allow` to
+  `block` (`optional` is rejected by the API). New accounts are created
+  without a password; existing members keep password sign-in. This applies to
+  every app on that connection.
+- ACUL `confirmation` screen ("Create your account?"): calls
+  `proceedToSignup()` at once behind a spinner, falling back to buttons on an
+  error or after 6 s. `signup-password` auto-skips when Auth0 offers
+  `showSkipPassword` (not reached with `block`, kept as a fallback).
+- Verified live: Join → email → straight to the email code step.
+
 ### Management API access and security cleanup (still pending, user action)
 
 - The user saved a Management API token as a **network secret on their
