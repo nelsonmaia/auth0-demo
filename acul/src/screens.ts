@@ -86,6 +86,9 @@ function passwordRules(
   return list
 }
 
+/** Under the passkey button: someone without a passkey isn't stuck. */
+const NO_PASSKEY_HINT = "No passkey yet? Continue with your email — we'll offer to set one up after you sign in."
+
 // ---------------------------------------------------------------------------
 // Sign in / join: step 1 (email)
 // ---------------------------------------------------------------------------
@@ -158,6 +161,7 @@ export function loginId(): HTMLElement {
       ...title("Sign in or join KINETIK.", "Use your passkey for the fastest sign-in, or continue with your email."),
       h("div", { class: "k-stack" }, passkey),
       h("p", { class: "k-hint" }, "Uses your fingerprint, face or screen lock."),
+      h("p", { class: "k-hint" }, NO_PASSKEY_HINT),
       divider(),
       f,
       google ? h("div", { class: "k-stack" }, googleButton(() => sdk.federatedLogin({ connection: google.name }))) : null,
@@ -181,6 +185,7 @@ export function loginId(): HTMLElement {
           "Sign in with a passkey",
         )
       : null,
+    passkeys ? h("p", { class: "k-hint" }, NO_PASSKEY_HINT) : null,
     links(
       sdk.transaction.isForgotPasswordEnabled ? ["Forgot password?", sdk.screen.resetPasswordLink] : null,
     ),
