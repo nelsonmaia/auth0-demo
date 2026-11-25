@@ -11,6 +11,7 @@ import ResetPasswordError from "@auth0/auth0-acul-js/reset-password-error"
 import EmailIdentifierChallenge from "@auth0/auth0-acul-js/email-identifier-challenge"
 import LoginEmailVerification from "@auth0/auth0-acul-js/login-email-verification"
 import PhoneIdentifierChallenge from "@auth0/auth0-acul-js/phone-identifier-challenge"
+import Confirmation from "@auth0/auth0-acul-js/confirmation"
 import { h } from "./dom.ts"
 import {
   STORE_URL,
@@ -252,6 +253,15 @@ export function signupId(): HTMLElement {
 export function signupPassword(): HTMLElement {
   const sdk = new SignupPassword()
   const errors = sdk.getErrors()
+  // KINETIK accounts don't need a password (sign-in is by email code or
+  // passkey). When Auth0 allows skipping it, do so straight away.
+  if (sdk.screen.data?.showSkipPassword && errors.length === 0) {
+    return autoContinue("Setting up your account…", () => sdk.skipPassword(), () => signupPasswordForm(sdk, []))
+  }
+  return signupPasswordForm(sdk, errors)
+}
+
+function signupPasswordForm(sdk: SignupPassword, errors: ReturnType<SignupPassword["getErrors"]>): HTMLElement {
   const email = sdk.screen.data?.email ?? ""
   const pw = field({
     name: "password",
@@ -527,6 +537,50 @@ export function phoneIdentifierChallenge(): HTMLElement {
   })
 }
 
+// ---------------------------------------------------------------------------
+// Screens that need no input: show a spinner and continue at once
+// ---------------------------------------------------------------------------
+/**
+ * Runs `go` straight away behind a spinner. If it fails or the page is still
+ * here after a few seconds (e.g. JavaScript blocked a redirect), shows the
+ * `fallback` UI so the shopper is never stuck on a spinner.
+ */
+function autoContinue(message: string, go: () => Promise<void>, fallback: () => HTMLElement): HTMLElement {
+  const box = h("div", { class: "k-auto", role: "status", "aria-live": "polite" },
+    h("span", { class: "k-spinner", "aria-hidden": "true" }),
+    h("p", { class: "k-sub" }, message),
+  )
+  const showFallback = () => box.replaceWith(fallback())
+  const timer = window.setTimeout(showFallback, 6000)
+  queueMicrotask(() => {
+    go().catch(() => {
+      window.clearTimeout(timer)
+      showFallback()
+    })
+  })
+  return box
+}
+
+/** "Create your account?" confirmation for a new email: confirm automatically. */
+export function confirmation(): HTMLElement {
+  const sdk = new Confirmation()
+  if (sdk.getErrors().length > 0) return confirmationForm(sdk)
+  return autoContinue("Creating your KINETIK account…", () => sdk.proceedToSignup(), () => confirmationForm(sdk))
+}
+
+function confirmationForm(sdk: Confirmation): HTMLElement {
+  return h(
+    "div",
+    {},
+    ...title("Create your KINETIK account", "There's no account for this email yet. Continue to create one."),
+    errorBanner(sdk.getErrors()),
+    h("div", { class: "k-stack" },
+      h("button", { type: "button", class: "k-btn k-btn-primary", onclick: () => sdk.proceedToSignup() }, "Create Account"),
+      h("button", { type: "button", class: "k-btn k-btn-outline", onclick: () => sdk.goBack() }, "Use a Different Email"),
+    ),
+  )
+}
+
 export const screens: Record<string, () => HTMLElement> = {
   "login-id": loginId,
   "login-password": loginPassword,
@@ -541,4 +595,5 @@ export const screens: Record<string, () => HTMLElement> = {
   "email-identifier-challenge": emailIdentifierChallenge,
   "login-email-verification": loginEmailVerification,
   "phone-identifier-challenge": phoneIdentifierChallenge,
+  confirmation: confirmation,
 }

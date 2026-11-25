@@ -526,3 +526,20 @@ body.kinetik {
 .k-stack-tight {
   margin-top: 12px;
 }
+
+/* Auto-continue screens (confirmation, skip password) */
+.k-auto {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.k-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--line);
+  border-top-color: var(--text);
+  animation: k-spin 0.7s linear infinite;
+}
